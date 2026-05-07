@@ -1,8 +1,8 @@
-# Test format for Temporal Networks
 
-# 
-# 
-# https://en.wikipedia.org/wiki/Region_connection_calculus#Examples,
+
+
+
+
 
 net = {
     "name": "RCC8 Example",

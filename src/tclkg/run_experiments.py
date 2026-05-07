@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 Script pour lancer plusieurs experiences Learner2 en parallele.
 """
@@ -12,33 +12,33 @@ import multiprocessing as mp
 from pathlib import Path
 from typing import Tuple
 
-# ============ CONFIGURATION DES EXPÉRIENCES ============
 
-timeout = 86400  # 24 heures de timeout pour chaque expérience
 
-# Configurations pour QCNGenerator2.py (learner2 threshold-free)
-# Format principal: (kg, timeout, repair_inconsistency, discover)
-# Les formats legacy restent supportes: (kg, timeout) et (kg, timeout, repair)
+timeout = 86400
+
+
+
+
 EXPERIMENTS_GEN2 = [
-    # KG Q6256
-    # ("Q6256", timeout, False, False),  # Sans réparation, sans découverte
-    ("Q6256", timeout, True, False),  # Avec réparation
-    # KG Q215380
-    # ("Q215380", timeout, False, False),
+
+
+    ("Q6256", timeout, True, False),
+
+
     ("Q215380", timeout, True, False),
-    # KG Q82955
-    # ("Q82955", timeout, False, False),
-    # ("Q82955", timeout, True, False), # cette expe doit etre lancée toute seule car prend beaucoup de mémoire
+
+
+
 ]
 
-# Nombre d'expe à lancer simultanément
+
 MAX_PARALLEL = 6
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-# Dossier pour les logs
+
 LOG_DIR = PROJECT_ROOT / "logs_experiments"
 
-# ============================================================
+
 
 
 def run_single_experiment(config: Tuple) -> Tuple:
@@ -58,10 +58,10 @@ def run_single_experiment(config: Tuple) -> Tuple:
     else:
         raise ValueError(f"Unsupported learner2 config format: {config}")
 
-    # Créer le dossier de logs s'il n'existe pas
+
     os.makedirs(LOG_DIR, exist_ok=True)
 
-    # Nom du fichier log
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     repair_str = "repair" if repair else "norepair"
     discover_str = "discover" if discover else "nodiscover"
@@ -169,7 +169,7 @@ def main():
     end_time = datetime.now()
     duration = (end_time - start_time).total_seconds()
 
-    # Résumé
+
     print("\n" + "=" * 70)
     print("Summary")
     print("=" * 70)

@@ -32,7 +32,7 @@ ALLEN_CONVERSE = {
     "equals": "equals",
 }
 ALLEN_COMPOSE = {
-    # before (p)
+
     ("before", "before"): {"before"},
     ("before", "meets"): {"before"},
     ("before", "overlaps"): {"before"},
@@ -60,7 +60,7 @@ ALLEN_COMPOSE = {
         "met_by",
         "after",
     },
-    # meets (m)
+
     ("meets", "before"): {"before"},
     ("meets", "meets"): {"before"},
     ("meets", "overlaps"): {"before"},
@@ -74,7 +74,7 @@ ALLEN_COMPOSE = {
     ("meets", "overlapped_by"): {"overlaps", "starts", "during"},
     ("meets", "met_by"): {"finished_by", "equals", "finishes"},
     ("meets", "after"): {"contains", "started_by", "overlapped_by", "met_by", "after"},
-    # overlaps (o)
+
     ("overlaps", "before"): {"before"},
     ("overlaps", "meets"): {"before"},
     ("overlaps", "overlaps"): {"before", "meets", "overlaps"},
@@ -110,7 +110,7 @@ ALLEN_COMPOSE = {
         "met_by",
         "after",
     },
-    # finished_by (f)
+
     ("finished_by", "before"): {"before"},
     ("finished_by", "meets"): {"meets"},
     ("finished_by", "overlaps"): {"overlaps"},
@@ -130,7 +130,7 @@ ALLEN_COMPOSE = {
         "met_by",
         "after",
     },
-    # contains (c)
+
     ("contains", "before"): {"before", "meets", "overlaps", "finished_by", "contains"},
     ("contains", "meets"): {"overlaps", "finished_by", "contains"},
     ("contains", "overlaps"): {"overlaps", "finished_by", "contains"},
@@ -160,7 +160,7 @@ ALLEN_COMPOSE = {
         "met_by",
         "after",
     },
-    # starts (s)
+
     ("starts", "before"): {"before"},
     ("starts", "meets"): {"before"},
     ("starts", "overlaps"): {"before", "meets", "overlaps"},
@@ -174,7 +174,7 @@ ALLEN_COMPOSE = {
     ("starts", "overlapped_by"): {"during", "finishes", "overlapped_by"},
     ("starts", "met_by"): {"met_by"},
     ("starts", "after"): {"after"},
-    # equals (e)
+
     ("equals", "before"): {"before"},
     ("equals", "meets"): {"meets"},
     ("equals", "overlaps"): {"overlaps"},
@@ -188,7 +188,7 @@ ALLEN_COMPOSE = {
     ("equals", "overlapped_by"): {"overlapped_by"},
     ("equals", "met_by"): {"met_by"},
     ("equals", "after"): {"after"},
-    # started_by (sb)
+
     ("started_by", "before"): {
         "before",
         "meets",
@@ -208,7 +208,7 @@ ALLEN_COMPOSE = {
     ("started_by", "overlapped_by"): {"overlapped_by"},
     ("started_by", "met_by"): {"met_by"},
     ("started_by", "after"): {"after"},
-    # during (d)
+
     ("during", "before"): {"before"},
     ("during", "meets"): {"before"},
     ("during", "overlaps"): {"before", "meets", "overlaps", "starts", "during"},
@@ -248,7 +248,7 @@ ALLEN_COMPOSE = {
     },
     ("during", "met_by"): {"after"},
     ("during", "after"): {"after"},
-    # finishes (f)
+
     ("finishes", "before"): {"before"},
     ("finishes", "meets"): {"meets"},
     ("finishes", "overlaps"): {"overlaps", "starts", "during"},
@@ -268,7 +268,7 @@ ALLEN_COMPOSE = {
     ("finishes", "overlapped_by"): {"overlapped_by", "met_by", "after"},
     ("finishes", "met_by"): {"after"},
     ("finishes", "after"): {"after"},
-    # overlapped_by (ob)
+
     ("overlapped_by", "before"): {
         "before",
         "meets",
@@ -304,7 +304,7 @@ ALLEN_COMPOSE = {
     ("overlapped_by", "overlapped_by"): {"overlapped_by", "met_by", "after"},
     ("overlapped_by", "met_by"): {"after"},
     ("overlapped_by", "after"): {"after"},
-    # met_by (mb)
+
     ("met_by", "before"): {"before", "meets", "overlaps", "finished_by", "contains"},
     ("met_by", "meets"): {"starts", "equals", "started_by"},
     ("met_by", "overlaps"): {"during", "finishes", "overlapped_by"},
@@ -318,7 +318,7 @@ ALLEN_COMPOSE = {
     ("met_by", "overlapped_by"): {"after"},
     ("met_by", "met_by"): {"after"},
     ("met_by", "after"): {"after"},
-    # after (a)
+
     ("after", "before"): {
         "before",
         "meets",

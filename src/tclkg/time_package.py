@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 
 
-class Interval:  #  Djawad : Represente les intervalles et vérifie les axiomes d'Allen entre deux intervalles
+class Interval:
     start: Any
     end: Any
 
@@ -67,24 +67,24 @@ class Interval:  #  Djawad : Represente les intervalles et vérifie les axiomes 
         delta_days = (end - start).astype("timedelta64[D]")
         return int(delta_days.astype(int))
 
-    #### ALLEN'S AXIOMS     #   Djawad : Implémentation des axiomes d'Allen pour les intervalles de temps
 
-    # The end of A is before the start of B
+
+
     def is_A_before(self, other: Interval) -> bool:
         return bool(self.get_end() < other.get_start())
 
-    # Both intervals are equal
+
     def is_A_equal(self, other: Interval) -> bool:
         return bool(
             (self.get_start() == other.get_start())
             and (self.get_end() == other.get_end())
         )
 
-    # The end of A is the start of B
+
     def is_A_meets(self, other: Interval) -> bool:
         return bool(self.get_end() == other.get_start())
 
-    # The end of A is after the start of B & before the end of B
+
     def is_A_overlaps(self, other: Interval) -> bool:
         return bool(
             (self.get_start() < other.get_start())
@@ -92,7 +92,7 @@ class Interval:  #  Djawad : Represente les intervalles et vérifie les axiomes 
             and (self.get_end() < other.get_end())
         )
 
-    # The start of A is after the start of B and the end of A is before the end of B
+
     def is_A_during(self, other: Interval) -> bool:
         return bool(
             (self.get_start() > other.get_start())
@@ -111,12 +111,12 @@ class Interval:  #  Djawad : Represente les intervalles et vérifie les axiomes 
             and (self.get_start() > other.get_start())
         )
 
-    # Launch every verification of the axioms
+
     def is_A_verification(
         self, other: Interval
     ) -> dict[
         str, bool
-    ]:  # Djawad : retourne un dictionnaire avec le résultat de chaque axiome
+    ]:
         return {
             "before": self.is_A_before(other),
             "equal": self.is_A_equal(other),
@@ -128,7 +128,7 @@ class Interval:  #  Djawad : Represente les intervalles et vérifie les axiomes 
         }
 
 
-class Triple:  # Djawad : Représente un quintuplet (head, relation, value, date_interval)
+class Triple:
     head: str
     relation: str
     value: Any
@@ -170,7 +170,7 @@ class Triple:  # Djawad : Représente un quintuplet (head, relation, value, date
         )
 
 
-class Entity:  # Djawad : Représente une entité avec son intervalle de vie et ses quintuplets associés
+class Entity:
     name: str
     life_span: Interval
     triples_per_p: dict[str, set[Triple]]
@@ -204,7 +204,7 @@ class Entity:  # Djawad : Représente une entité avec son intervalle de vie et 
         self.triples_per_p[triple.relation].add(triple)
         self.triples_per_r_and_rxv[triple.relation].add(triple)
 
-        ### PREFIX FOR WIKIDATA
+
         prefix = "http://"
         if isinstance(triple.value, str) and triple.value[: len(prefix)] == prefix:
             if (triple.relation, triple.value) not in self.triples_per_r_and_rxv:
@@ -307,7 +307,7 @@ class Entity:  # Djawad : Représente une entité avec son intervalle de vie et 
 
     def get_triples_with_p(
         self, p: str
-    ) -> set[Triple] | None:  # Djawad : récupère les triplets associés à une relation r
+    ) -> set[Triple] | None:
         if p in self.triples_per_p:
             return self.triples_per_p[p]
         return None
@@ -334,7 +334,7 @@ class Entity:  # Djawad : Représente une entité avec son intervalle de vie et 
                 self.triples_per_r_and_rxv[(r, v)].add(t)
 
 
-class TimeSequence:  #  Djawad : Représente une séquence temporelle d'intervalles et gère les comparaisons entre deux TimeSequence
+class TimeSequence:
     intervals: list[Interval]
     multi_valuation_temporal: bool
     meets: int
@@ -348,46 +348,46 @@ class TimeSequence:  #  Djawad : Représente une séquence temporelle d'interval
         for i in range(len(intervals) - 1):
             if (
                 intervals[i].get_end() > intervals[i + 1].get_start()
-            ):  # Djawad : check si deux intervalles se chevauchent
+            ):
                 self.multi_valuation_temporal = (
-                    True  # Djawad : si oui, on met le flag à True
+                    True
                 )
 
             if self.intervals[i].is_A_meets(
                 self.intervals[i + 1]
-            ):  # Djawad : check si deux intervalles se suivent
+            ):
                 self.meets += 1
 
     def __len__(self) -> int:
         return len(self.intervals)
 
-    # Maybe to move to the next class  # Djawad: Ici rien n'est encore fait
+
     def find_inter_comparison(
         self, other: TimeSequence
     ) -> list[
         tuple[Interval, Interval]
-    ]:  # Djawad : trouve toutes les paires d'intervalles comparables entre deux TimeSequence (propriétés)
+    ]:
         if (
             self.multi_valuation_temporal or other.multi_valuation_temporal
-        ):  # Djawad : si l'un des deux TimeSequence a des intervalles qui se chevauchent
-            print("Working on multi")  # Djawad : property temporally infunctional
+        ):
+            print("Working on multi")
 
         if (len(self.intervals) == 0) or (
             len(other.intervals) == 0
-        ):  # Djawad : si l'un des deux TimeSequence est vide
+        ):
             print("One is len == 0")
-            return []  # Djawad : on retourne une liste vide
-        # print(self.intervals, other.intervals)
+            return []
 
-        # Take the last index and try to find the next earliest interval among the two sequence
-        # Return name_sequence, new_last_index_per_seq, interval
-        # If name_sequence == 2, then we return two intervals because they start at the same time
+
+
+
+
         def find_next_earliest_interval(
             last_index_per_seq: Any,
-        ) -> tuple[int, Any, Any]:  # Djawad : pas lu
+        ) -> tuple[int, Any, Any]:
             self_index, other_index = last_index_per_seq
 
-            # If we are at the end of one of them then we return the other one directly
+
             if (self_index + 1 >= len(self.intervals)) and (
                 other_index + 1 >= len(other.intervals)
             ):
@@ -426,9 +426,9 @@ class TimeSequence:  #  Djawad : Représente une séquence temporelle d'interval
                 )
             return -1, None, None
 
-        # We look at which cursor to move
-        # Either 0, 1 or 2 (meaning both have to move because they finish at the same time)
-        def which_cursor_to_move(c_0: Any, c_1: Any) -> int:  # Djawad : pas lu
+
+
+        def which_cursor_to_move(c_0: Any, c_1: Any) -> int:
             if c_0[2].get_end() < c_1[2].get_end():
                 return 0
             elif c_0[2].get_end() > c_1[2].get_end():
@@ -436,11 +436,11 @@ class TimeSequence:  #  Djawad : Représente une séquence temporelle d'interval
             return 2
 
         last_index_per_seq: Any = [-1, -1]
-        # (Index, Seq_name, Interval)
+
         c_0: Any = (None, None, None)
         c_1: Any = (None, None, None)
 
-        # INIT CURSORS
+
         name_sequence, last_index_per_seq, interval = find_next_earliest_interval(
             last_index_per_seq
         )
@@ -452,7 +452,7 @@ class TimeSequence:  #  Djawad : Représente une séquence temporelle d'interval
             c_0 = (last_index_per_seq[0], 0, interval[0])
             c_1 = (last_index_per_seq[1], 1, interval[1])
 
-        # If we are not in the case where we have an equality in the first interval
+
         if c_1[0] is None:
             name_sequence, last_index_per_seq, interval = find_next_earliest_interval(
                 last_index_per_seq
@@ -496,7 +496,7 @@ class TimeSequence:  #  Djawad : Représente une séquence temporelle d'interval
                     c_0 = (last_index_per_seq[0], 0, interval[0])
                     c_1 = (last_index_per_seq[1], 1, interval[1])
 
-            # If both cursors are to be moved
+
             else:
                 name_sequence, last_index_per_seq, interval = (
                     find_next_earliest_interval(last_index_per_seq)
@@ -544,13 +544,13 @@ class TimeSequenceRelation:
     seq_A: TimeSequence
     seq_B: TimeSequence
 
-    # Dans le papier je crois que ça correspond à la matrice M_fleche_exterieure
+
     inter_comparison_A_to_B: dict[
         str, int
-    ]  # Djawad : dictionnaire avec le nombre de fois qu'une relation d'Allen est vérifiée de A vers B
+    ]
     inter_comparison_B_to_A: dict[
         str, int
-    ]  # Djawad : dictionnaire avec le nombre de fois qu'une relation d'Allen est vérifiée de B vers A
+    ]
 
     A_o_B: set[str]
     B_o_A: set[str]
@@ -567,14 +567,14 @@ class TimeSequenceRelation:
     ) -> None:
         name_relation_A = str(
             name_relation_A
-        )  # Djawad : récuperer les noms des relations en str
+        )
         name_relation_B = str(
             name_relation_B
-        )  # Djawad : récuperer les noms des relations en str
+        )
 
         if (
             name_relation_A < name_relation_B
-        ):  # Djawad : on ordonne les relations par ordre alphabétique "
+        ):
             self.name_relation_A = name_relation_A
             self.name_relation_B = name_relation_B
 
@@ -590,41 +590,41 @@ class TimeSequenceRelation:
 
         compare = self.seq_A.find_inter_comparison(
             self.seq_B
-        )  # Djawad : on trouve toutes les paires d'intervalles comparables entre les deux TimeSequence
+        )
 
         inter_raw_a_to_b = [
             int_a.is_A_verification(int_b) for (int_a, int_b) in compare
-        ]  # Djawad : on vérifie chaque relation d'Allen pour chaque paire d'intervalles (A vers B)
+        ]
         inter_raw_b_to_a = [
             int_b.is_A_verification(int_a) for (int_a, int_b) in compare
-        ]  # Djawad : on vérifie chaque relation d'Allen pour chaque paire d'intervalles (B vers A)
-        # Djawad : on compte le nombre de fois que chaque relatiinter_raw_a_to_bon d'Allen est vérifiée pour l'intervalle A vers l'intervalle B
+        ]
+
         self.inter_comparison_A_to_B = {
             key: sum([inter_raw_a_to_b[i][key] for i in range(len(inter_raw_a_to_b))])
             for key in self.name_axioms
         }
-        # print("Djawad: DEBUG inter_comparison_A_to_B:", self.inter_comparison_A_to_B)
-        # Djawad : on compte le nombre de fois que chaque relation d'Allen est vérifiée pour l'intervalle B vers l'intervalle A
+
+
         self.inter_comparison_B_to_A = {
             key: sum([inter_raw_b_to_a[i][key] for i in range(len(inter_raw_b_to_a))])
             for key in self.name_axioms
         }
-        # print("Djawad: DEBUG inter_comparison_B_to_A:", self.inter_comparison_B_to_A)
+
 
         self.A_o_B = set()
         self.B_o_A = set()
-        #
-        if not constraint_to_check:  # Constraint at None  # Djawad : si on n'a pas de contrainte/relation spécifique à vérifier
-            self.verify_axioms_props()  # Djawad : on vérifie les axiomes d'Allen entre les deux TimeSequence
+
+        if not constraint_to_check:
+            self.verify_axioms_props()
             self.verify_multi_axioms_props()
-            # self.verify_multi_axioms_props_restrictif()
-        else:  # Djawad : si on a une contrainte/relation spécifique à vérifier
+
+        else:
             self.verified = self.apply_only_constraint(constraint_to_check)
 
     def get_name(self) -> tuple[str, str]:
         return (self.name_relation_A, self.name_relation_B)
 
-    # Axioms relations
+
 
     def is_A_equal_B(self):
         if self.inter_comparison_A_to_B["equal"] == len(self.seq_A.intervals):
@@ -702,7 +702,7 @@ class TimeSequenceRelation:
         ) and (self.inter_comparison_B_to_A["equal"] == len(self.seq_B.intervals))
 
     def verify_axioms_props(self):
-        # Djawad : pourquoi ces axiomes figurent ici et pas dans la section multi axioms ?
+
         if self.are_equal():
             self.A_o_B.add("are equals")
             self.B_o_A.add("are equals")
@@ -737,9 +737,9 @@ class TimeSequenceRelation:
             if res:
                 self.B_o_A.add(res)
 
-    # Multi axions relations
 
-    # djawad : check only one constraint
+
+
     def check_axiom_validity(self, axiom_name: str) -> bool:
         if axiom_name == "equal":
             return (
@@ -778,7 +778,7 @@ class TimeSequenceRelation:
             return False
 
     def is_either_one_or_the_other(self):
-        # FOR ALL axioms/{before, meets}, _ axioms _ == 0
+
 
         sum_axioms = 0
         for axiom in self.name_axioms.difference({"before", "meets"}):
@@ -791,7 +791,7 @@ class TimeSequenceRelation:
         return ""
 
     def is_one_or_the_other_not_closed(self):
-        # FOR ALL axioms/{before}, _ axioms _ == 0
+
 
         if self.seq_A.meets + self.seq_B.meets != 0:
             return ""
@@ -806,7 +806,7 @@ class TimeSequenceRelation:
         return ""
 
     def is_one_or_the_other_closed(self):
-        # FOR ALL axioms/{meets}, _ axioms _ == 0
+
 
         sum_axioms = 0
         for axiom in self.name_axioms.difference({"meets"}):
@@ -897,15 +897,15 @@ class TimeSequenceRelation:
             return "always_overlapping"
         return ""
 
-    # def is_never_alone(self):
-    #     sum_axioms = 0
-    #     for axiom in self.name_axioms.difference({"before", "meets"}):
-    #         sum_axioms += self.inter_comparison_A_to_B[axiom]
-    #         sum_axioms += self.inter_comparison_B_to_A[axiom]
 
-    #     if sum_axioms == (len(self.seq_A) + len(self.seq_B) - 1):
-    #         return "never alone"
-    #     return ""
+
+
+
+
+
+
+
+
 
     def verify_multi_axioms_props(self) -> None:
 
@@ -947,11 +947,11 @@ class TimeSequenceRelation:
 
     def verify_multi_axioms_props_restrictif(self) -> None:
 
-        ### ETIHER ONE OR THE OTHER
-        ### __ CLOSED ||| ___ NOT CLOSED
-        ### In between closed |||| In between | A seq before
 
-        ##### A SEQ BEFORE
+
+
+
+
 
         res = self.is_seq_A_before_seq_B()
         if res:
@@ -963,7 +963,7 @@ class TimeSequenceRelation:
             self.B_o_A.add(res)
             return
 
-        ##### In between
+
 
         res = self.is_in_between()
         if res:
@@ -971,7 +971,7 @@ class TimeSequenceRelation:
             self.B_o_A.add(res)
             return
 
-        ##### In between closed
+
 
         res = self.is_in_between_closed()
         if res:
@@ -979,7 +979,7 @@ class TimeSequenceRelation:
             self.B_o_A.add(res)
             return
 
-        ##### is_one_or_the_other_not_closed
+
 
         res = self.is_one_or_the_other_not_closed()
         if res:
@@ -987,7 +987,7 @@ class TimeSequenceRelation:
             self.B_o_A.add(res)
             return
 
-        ##### is_one_or_the_other_closed
+
 
         res = self.is_one_or_the_other_closed()
         if res:
@@ -995,7 +995,7 @@ class TimeSequenceRelation:
             self.B_o_A.add(res)
             return
 
-        ##### is_either_one_or_the_other
+
 
         res = self.is_either_one_or_the_other()
         if res:
@@ -1142,11 +1142,11 @@ class TemporalRule:
             and self.precision_b == other.precision_b
         )
 
-    # def get_a(self):
-    #     res = self.a
-    #     if self.precision_a:
-    #         res+="X"+self.precision_a
-    #     return res
+
+
+
+
+
 
     def get_a(self) -> str | tuple[str, str]:
         if not self.precision_a:
@@ -1154,11 +1154,11 @@ class TemporalRule:
         else:
             return (self.a, self.precision_a)
 
-    # def get_b(self):
-    #     res = self.b
-    #     if self.precision_b:
-    #         res+="X"+self.precision_b
-    #     return res
+
+
+
+
+
 
     def get_b(self) -> str | tuple[str, str]:
         if not self.precision_b:
@@ -1212,7 +1212,7 @@ class TemporalRule:
         )
 
     def is_useful_for_e(self, e: Entity) -> bool:
-        # We look if we can use the A part
+
         if not self.precision_a:
             if not e.get_triples_with_p(self.a):
                 return False
@@ -1223,7 +1223,7 @@ class TemporalRule:
             if not any(t.value == self.precision_a for t in triples):
                 return False
 
-        # We look if we can use the B part
+
         if not self.precision_b:
             if not e.get_triples_with_p(self.b):
                 return False
@@ -1234,10 +1234,10 @@ class TemporalRule:
             if not any(t.value == self.precision_b for t in triples):
                 return False
 
-        # We can use both parts
+
         return True
 
-    # def does_hold_for_e(self, e:Entity) -> bool:
+
 
 
 def ordered_time_sequence_first_start(entity: Entity, r: str) -> list[Interval]:

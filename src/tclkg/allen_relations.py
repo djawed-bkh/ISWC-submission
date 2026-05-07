@@ -8,11 +8,11 @@ class AllenRelation:
         quadruplet_A et quadruplet_B doivent avoir un attribut .date
         qui est une Interval avec .start et .end (ou tuple (start, end))
         """
-        # Extraire les intervalles temporels
+
         interval_A = quadruplet_A.date
         interval_B = quadruplet_B.date
 
-        # Convertir en tuples (start, end) si ce ne sont pas déjà des tuples
+
         if hasattr(interval_A, "start") and hasattr(interval_A, "end"):
             self.A_start = interval_A.start
             self.A_end = interval_A.end
@@ -75,27 +75,27 @@ class AllenRelation:
         results["finished_by"] = self.is_A_finished_by_B()
         return results
 
-    # 1) equals
+
     def is_A_equal_B(self) -> bool:
         return (self.A_start == self.B_start) and (self.A_end == self.B_end)
 
-    # 2) before
+
     def is_A_before_B(self) -> bool:
         return self.A_end < self.B_start
 
-    # 3) after
+
     def is_A_after_B(self) -> bool:
         return self.B_end < self.A_start
 
-    # 4) meets
+
     def is_A_meets_B(self) -> bool:
         return self.A_end == self.B_start
 
-    # 5) met_by
+
     def is_A_met_by_B(self) -> bool:
         return self.B_end == self.A_start
 
-    # 6) overlaps
+
     def is_A_overlaps_B(self) -> bool:
         return (
             (self.A_start < self.B_start)
@@ -103,7 +103,7 @@ class AllenRelation:
             and (self.A_end < self.B_end)
         )
 
-    # 7) overlapped_by
+
     def is_A_overlapped_by_B(self) -> bool:
         return (
             (self.B_start < self.A_start)
@@ -111,26 +111,26 @@ class AllenRelation:
             and (self.B_end < self.A_end)
         )
 
-    # 8) during
+
     def is_A_during_B(self) -> bool:
         return (self.A_start > self.B_start) and (self.A_end < self.B_end)
 
-    # 9) contains
+
     def is_A_contains_B(self) -> bool:
         return (self.B_start > self.A_start) and (self.B_end < self.A_end)
 
-    # 10) starts
+
     def is_A_starts_B(self) -> bool:
         return (self.A_start == self.B_start) and (self.A_end < self.B_end)
 
-    # 11) started_by
+
     def is_A_started_by_B(self) -> bool:
         return (self.B_start == self.A_start) and (self.B_end < self.A_end)
 
-    # 12) finishes
+
     def is_A_finishes_B(self) -> bool:
         return (self.A_start > self.B_start) and (self.A_end == self.B_end)
 
-    # 13) finished_by
+
     def is_A_finished_by_B(self) -> bool:
         return (self.B_start > self.A_start) and (self.B_end == self.A_end)

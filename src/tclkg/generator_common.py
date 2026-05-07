@@ -113,7 +113,7 @@ def read_kg(
     properties_seen: set[str] = set()
 
     print("DÉBUT DU CHARGEMENT DU KNOWLEDGE GRAPH")
-    # Chercher data.quintuplet en priorité (dataset complet), fallback sur train_cst_knowledge
+
     kg_path = ROOT_DATA / kg_type / "data.quintuplet"
     if not kg_path.exists():
         kg_path = ROOT_DATA / kg_type / "train_cst_knowledge.quintuplet"
@@ -159,24 +159,24 @@ def BasicRepairInconsistency(qcn: dict, key1: tuple[str, str], key2: tuple[str, 
     _extract_relation_payloads(qcn[key1])
     _extract_relation_payloads(qcn[key2])
 
-    # Déterminer quelles relations réintroduire
+
     if composition is not None and composition:
-        # Utiliser les relations de la composition mais avec un score de -1 pour toutes
-        # pour marquer qu'elles sont issues d'une réparation
+
+
         relation_scores = {r: -1.0 for r in composition.keys()}
     else:
-        # Domaine complet d'Allen avec scores de -1
+
         relation_scores = {r: -1.0 for r in ALLEN_RELATIONS}
 
     relation_statuses = {relation: "Repaired" for relation in relation_scores}
     what_to_add = _build_structured_domain(relation_scores, relation_statuses)
     converse_what_to_add = converse_domain_scores(what_to_add)
-    
-    # Réintroduire les relations avec score de -1 pour la paire directe
+
+
     repaired_qcn[key1] = what_to_add
     repaired_qcn[key2] = converse_what_to_add
-        
-        
+
+
     return repaired_qcn
 
 
@@ -239,7 +239,7 @@ def build_scored_networkwithThreshold(
 
     filtered_properties = sorted(properties)
     if entities is not None:
-        # Count quadruplets per property
+
         property_quadruplet_count: dict[str, int] = {p: 0 for p in filtered_properties}
 
         for entity in entities.values():
@@ -247,7 +247,7 @@ def build_scored_networkwithThreshold(
                 if prop in property_quadruplet_count:
                     property_quadruplet_count[prop] += len(triples)
 
-        # Sort by quadruplet count (descending), then by property name for stable tie-breaks.
+
         sorted_props = sorted(
             property_quadruplet_count.items(),
             key=lambda x: (-x[1], x[0]),
@@ -294,13 +294,13 @@ def compose_allen_scores(
     for r1, score1 in r1_domain.items():
         if r1 not in ALLEN_RELATIONS:
             continue
-        if score1 < 0:  # si la relation n'est pas issue d'une réparation ou si elle n'a pas de support
-            continue  # ignorer les relations sans support
+        if score1 < 0:
+            continue
         for r2, score2 in r2_domain.items():
             if r2 not in ALLEN_RELATIONS:
                 continue
-            if score2 < 0:  # si la relation n'est pas issue d'une réparation ou si elle n'a pas de support
-                continue  # ignorer les relations sans support
+            if score2 < 0:
+                continue
             composed_relations = ALLEN_COMPOSE[(r1, r2)]
             min_score = min(score1, score2)
             for relation in composed_relations:
@@ -320,7 +320,7 @@ def path_consistency_classique(qcn: dict) -> dict | None:
     qcn_copy = deepcopy(qcn)
     properties = sorted(
         {p for (x, y) in qcn_copy.keys() for p in (x, y)}
-    )  # liste des propriétés impliquées dans le réseau de contraintes
+    )
 
     def intersect_with_composed_domain(
         domain: Mapping[str, object],
@@ -337,10 +337,10 @@ def path_consistency_classique(qcn: dict) -> dict | None:
             if relation in composed_relations
         }
 
-    queue = deque(qcn_copy.keys())  # initialisation de la file avec toutes les paires
+    queue = deque(qcn_copy.keys())
 
-    while queue:  # tant que la file n'est pas vide
-        i, j = queue.popleft()  # dépiler une paire (i,j)
+    while queue:
+        i, j = queue.popleft()
 
         for k in properties:
             if k == i or k == j:
@@ -369,9 +369,9 @@ def path_consistency_classique(qcn: dict) -> dict | None:
                 qcn_copy[(k, i)],
                 qcn_copy[(i, j)],
             )
-                    
+
             if set(new_dik.keys()) != set(_extract_relation_scores(dik).keys()):
-                if not new_dik:  # domaine vide => échec de la propagation
+                if not new_dik:
                     print(
                             f"COLLAPSE: domain empty for pair ({i}, {k}) during path consistency ! ORIGIN: PATH CONSISTENCY"
                         )
@@ -381,16 +381,16 @@ def path_consistency_classique(qcn: dict) -> dict | None:
                         relation: _extract_relation_statuses(dik).get(relation)
                         for relation in new_dik
                     }
-                    qcn_copy[(i, k)] = _build_structured_domain(new_dik, dik_statuses)  # mise à jour du domaine modifié
+                    qcn_copy[(i, k)] = _build_structured_domain(new_dik, dik_statuses)
                     qcn_copy[(k, i)] = converse_domain_scores(
                         qcn_copy[(i, k)]
-                    )  # mise à jour du domaine inverse
+                    )
 
-                # re-enfiler minimalement
+
                 queue.append((i, k))
             if set(new_dkj.keys()) != set(_extract_relation_scores(dkj).keys()):
-                if not new_dkj:  # domaine vide => échec de la propagation
-                
+                if not new_dkj:
+
                     print(
                             f"COLLAPSE: domain empty for pair ({k}, {j}) during path consistency ! ORIGIN: PATH CONSISTENCY"
                         )
@@ -400,12 +400,12 @@ def path_consistency_classique(qcn: dict) -> dict | None:
                         relation: _extract_relation_statuses(dkj).get(relation)
                         for relation in new_dkj
                     }
-                    qcn_copy[(k, j)] = _build_structured_domain(new_dkj, dkj_statuses)  # mise à jour du domaine modifié
+                    qcn_copy[(k, j)] = _build_structured_domain(new_dkj, dkj_statuses)
                     qcn_copy[(j, k)] = converse_domain_scores(
                         qcn_copy[(k, j)]
-                    )  # mise à jour du domaine inverse
+                    )
 
-                # re-enfiler minimalement
+
                 queue.append((k, j))
 
     return qcn_copy

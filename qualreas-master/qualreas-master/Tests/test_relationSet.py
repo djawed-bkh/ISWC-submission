@@ -13,8 +13,8 @@ class TestRelationSet(unittest.TestCase):
         self.aaa = qr.Relation('aaa', 'a', 'A', 'testDomain', 'testRange')
         self.bbb = qr.Relation('bbb', 'b', 'B', 'testRange', 'testDomain')
 
-        self.AAA.set_converse(self.aaa)  # AAA & aaa are each others' converses
-        self.BBB.set_converse(self.bbb)  # BBB & bbb are each others' converses
+        self.AAA.set_converse(self.aaa)
+        self.BBB.set_converse(self.bbb)
         self.aaa.set_converse(self.AAA)
         self.bbb.set_converse(self.BBB)
 
@@ -22,7 +22,7 @@ class TestRelationSet(unittest.TestCase):
         self.relset_Bab = qr.RelationSet([self.aaa, self.bbb, self.BBB])
 
     def test_addition(self):
-        # 'Addition' is the same as set intersection
+
         self.assertEqual(self.relset_ABa + self.relset_Bab, qr.RelationSet([self.BBB, self.aaa]))
 
     def test_contains_1(self):
@@ -46,8 +46,8 @@ class TestRelationSet(unittest.TestCase):
     def test_len(self):
         self.assertEqual(len(self.relset_ABa), 3)
 
-#    def test_mul(self):
-#        '''N/A: The relations have to be part of an algebra to test multiplication'''
+
+
 
     def test_ne_1(self):
         self.assertEqual(self.relset_ABa != qr.RelationSet([self.aaa, self.BBB, self.AAA]), False)
@@ -55,21 +55,21 @@ class TestRelationSet(unittest.TestCase):
     def test_ne_2(self):
         self.assertEqual(self.relset_ABa != qr.RelationSet([self.bbb, self.BBB, self.AAA]), True)
 
-#    def test_repr(self):
-#
+
+
 
     def test_union(self):
         self.assertEqual(self.relset_ABa.union(self.relset_Bab),
                          qr.RelationSet([self.AAA, self.BBB, self.aaa, self.bbb]))
 
-    # def test_printSorted(self):
-    #     self.fail()
+
+
 
     def test_elements(self):
         self.assertEqual(self.relset_ABa.elements, frozenset([self.AAA, self.BBB, self.aaa]))
 
-    # def test_algebra(self):
-    #     self.fail()
+
+
 
     def test_converse(self):
         self.assertEqual(self.relset_ABa.converse, qr.RelationSet([self.aaa, self.bbb, self.AAA]))
@@ -83,4 +83,4 @@ class TestRelationSet(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
-# EOF
+

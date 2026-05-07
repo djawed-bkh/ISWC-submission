@@ -19,7 +19,7 @@ from .generator_common import (
 )
 
 
-PROPERTY_SUPPORT_THRESHOLD = 0.4  # Garde les 40% de propriétés les plus présentes en quadruplets
+PROPERTY_SUPPORT_THRESHOLD = 0.4
 SUPPORT_KEY = "support"
 STATUS_KEY = "status"
 RELATIONS_KEY = "relations"
@@ -132,8 +132,8 @@ def build_output_stem(kg_type: str) -> str:
     return f"qcn2_{kg_type}"
 
 
-        # -2 : score négatif spécial pour indiquer que aucune entité n'a les deux propriétés, ce qui signifie que le KG ne fournit aucune information pour ce couple de propriétés, et que l'on ne peut pas conclure à l'existence ou l'inexistence de la relation d'Allen entre ces propriétés à partir du KG
-        # -1 : score négatif spécial hérité d'anciennes sorties, représentant une relation non fiable qui ne doit pas être propagée dans les compositions
+
+
 
 
 def heuristic_queue(
@@ -142,11 +142,11 @@ def heuristic_queue(
     """
     Réordonne la file de propagation en donnant la priorité aux paires avec les domaines les plus restreints afin de maximiser l'efficacité de la propagation.
     """
-    queue = deque(qcn.keys())  # initialisation de la file avec toutes les paires
-    # Calculer la taille des domaines pour chaque paire dans la file
+    queue = deque(qcn.keys())
+
     pair_domain_sizes = {pair: len(relation_entries(qcn[pair])) for pair in queue}
 
-    # Trier les paires par taille de domaine (du plus petit au plus grand)
+
     if type == "domain_size_asc":
         sorted_pairs = sorted(pair_domain_sizes, key=lambda pair: pair_domain_sizes[pair])
     elif type == "domain_size_desc":
@@ -161,14 +161,14 @@ def heuristic_queue(
         random.shuffle(sorted_pairs)
     else:
         raise ValueError(f"Unknown heuristic type: {type}")
-    # Réordonner la file en fonction de ce tri
+
     queue.clear()
     queue.extend(sorted_pairs)
     return queue
 
 def propagateAndFilter(qcn: dict) -> dict:
     '''
-    prend en entrée le qcn résultant du learner. 
+    prend en entrée le qcn résultant du learner.
     '''
     qcn_copy = copy.deepcopy(qcn)
     composition_source_statuses = {
@@ -196,12 +196,12 @@ def propagateAndFilter(qcn: dict) -> dict:
 
     properties = sorted(
         {p for (x, y) in qcn_copy.keys() for p in (x, y)}
-    )  # liste des propriétés impliquées dans le réseau de contraintes
+    )
 
-    queue = deque(qcn_copy.keys())  # initialisation de la file avec toutes les paires
+    queue = deque(qcn_copy.keys())
 
-    while queue:  # tant que la file n'est pas vide
-        i, j = queue.popleft()  # dépiler une paire (i,j)
+    while queue:
+        i, j = queue.popleft()
 
         for k in properties:
             if k == i or k == j:
@@ -217,54 +217,54 @@ def propagateAndFilter(qcn: dict) -> dict:
                 raise ValueError(
                     f"Missing arc in qcn_copy during propagation: {(i, k)} or {(k, j)}"
                 )
-            
-            # Keep only strictly positive supports for propagation targets.
+
+
             ik_relations = {
                 relation: score
                 for relation, score in relation_scores(qcn_copy[(i, k)]).items()
                 if score > 0
-            }  # beneficiaire de la composition
+            }
             kj_relations = {
                 relation: score
                 for relation, score in relation_scores(qcn_copy[(k, j)]).items()
                 if score > 0
-            }  # beneficiaire de la composition
-            
-            ij_relations = relation_scores(qcn_copy[(i, j)]) # utilisé pour la composition de ik et kj
-            jk_relations = relation_scores(qcn_copy[(j, k)]) # utilisé pour la composition de ik
-            ki_relations = relation_scores(qcn_copy[(k, i)]) # utilisé pour la composition de ik
+            }
+
+            ij_relations = relation_scores(qcn_copy[(i, j)])
+            jk_relations = relation_scores(qcn_copy[(j, k)])
+            ki_relations = relation_scores(qcn_copy[(k, i)])
 
             relations_to_compose_ij = composable_relations(qcn_copy[(i, j)])
             relations_to_compose_jk = composable_relations(qcn_copy[(j, k)])
             relations_to_compose_ki = composable_relations(qcn_copy[(k, i)])
 
-            # check si il existe au moins une relation composable (support > 0 + statut autorisé)
+
             positive_support_ij = bool(relations_to_compose_ij)
             positive_support_jk = bool(relations_to_compose_jk)
             positive_support_ki = bool(relations_to_compose_ki)
             target_ik_is_observed = domain_has_observed_status(qcn_copy[(i, k)])
             target_kj_is_observed = domain_has_observed_status(qcn_copy[(k, j)])
 
-            # Traiter la paire (i, k)
+
             if (not target_ik_is_observed) and positive_support_ij and positive_support_jk:
-                # On fait la composition seulement avec les relations composables.
+
                 composition = composition_Allen(relations_to_compose_ij, relations_to_compose_jk)
                 for c in composition:
-                    if c not in ik_relations: # si la relation composée n'est pas dans ik_relations
-                        # recuperer le statut de c dans ik
+                    if c not in ik_relations:
+
                         ik_relation_status = relation_statuses(qcn_copy[(i, k)]).get(c)
                         if ik_relation_status is  not None:
                             print("Warning: we should not be here, if the relation is not in ik_relations, it should not have a status different from None")
-                            raise ValueError("Unexpected case in propagation: relation not in ik_relations but has an observed status")                      
-                        #update score et statut
+                            raise ValueError("Unexpected case in propagation: relation not in ik_relations but has an observed status")
+
                         qcn_copy[(i, k)][RELATIONS_KEY][c] = {SUPPORT_KEY: composition[c], STATUS_KEY: STATUS_INFERRED}
                         qcn_copy[(k, i)] = converse_domain(qcn_copy[(i, k)])
                         if (i, k) not in queue:
                             queue.append((i, k))
-                        
-                    elif composition[c] > ik_relations[c]:  # si le score de la relation composée est supérieur au score actuel dans ik_relations
-                        
-                       
+
+                    elif composition[c] > ik_relations[c]:
+
+
                         ik_relation_status = relation_statuses(qcn_copy[(i, k)]).get(c)
                         if ik_relation_status == STATUS_OBSERVED:
                             qcn_copy[(i, k)][RELATIONS_KEY][c] = {
@@ -273,19 +273,19 @@ def propagateAndFilter(qcn: dict) -> dict:
                             }
                             qcn_copy[(k, i)] = converse_domain(qcn_copy[(i, k)])
                         elif ik_relation_status == STATUS_OBSERVED_AND_INFERRED:
-                            # No-op: observed support remains authoritative.
+
                             pass
                         elif ik_relation_status == STATUS_INFERRED:
-                            qcn_copy[(i, k)][RELATIONS_KEY][c] = {SUPPORT_KEY: composition[c], STATUS_KEY: STATUS_INFERRED}                        
+                            qcn_copy[(i, k)][RELATIONS_KEY][c] = {SUPPORT_KEY: composition[c], STATUS_KEY: STATUS_INFERRED}
                             qcn_copy[(k, i)] = converse_domain(qcn_copy[(i, k)])
                             if (i, k) not in queue:
                                 queue.append((i, k))
                         else:
                             print("Warning: we should not be here")
                             raise ValueError("Unexpected case in propagation: relation not in ik_relations but composition score is higher than ik_relations score")
-        
-                    elif composition[c] <= ik_relations[c]: # si le score de la relation composée est inférieur ou égal au score actuel dans ik_relations,
-                        #update score et statut
+
+                    elif composition[c] <= ik_relations[c]:
+
                         ik_relation_status = relation_statuses(qcn_copy[(i, k)]).get(c)
                         if ik_relation_status == STATUS_OBSERVED:
                             qcn_copy[(i, k)][RELATIONS_KEY][c] = {
@@ -294,33 +294,33 @@ def propagateAndFilter(qcn: dict) -> dict:
                             }
                             qcn_copy[(k, i)] = converse_domain(qcn_copy[(i, k)])
                         elif ik_relation_status in {STATUS_INFERRED, STATUS_OBSERVED_AND_INFERRED}:
-                            # No-op: no improvement and status already carries inference.
+
                             pass
                         else:
                             print("Warning: we should not be here")
                             raise ValueError("Unexpected case in propagation: relation not in ik_relations but composition score is higher than ik_relations score")
 
 
-            # Traiter la paire (k,j)
+
             if (not target_kj_is_observed) and positive_support_ki and positive_support_ij:
-                # On fait la composition seulement avec les relations composables.
+
                 composition = composition_Allen(relations_to_compose_ki, relations_to_compose_ij)
                 for c in composition:
-                    if c not in kj_relations: # si la relation composée n'est pas dans kj_relations
-                        # recuperer le statut de c dans kj
+                    if c not in kj_relations:
+
                         kj_relation_status = relation_statuses(qcn_copy[(k, j)]).get(c)
                         if kj_relation_status is  not None:
                             print("Warning: we should not be here, if the relation is not in kj_relations, it should not have a status different from None")
-                            raise ValueError("Unexpected case in propagation: relation not in kj_relations but has an observed status")                      
-                        #update score et statut
+                            raise ValueError("Unexpected case in propagation: relation not in kj_relations but has an observed status")
+
                         qcn_copy[(k, j)][RELATIONS_KEY][c] = {SUPPORT_KEY: composition[c], STATUS_KEY: STATUS_INFERRED}
                         qcn_copy[(j, k)] = converse_domain(qcn_copy[(k, j)])
                         if (k, j) not in queue:
                             queue.append((k, j))
-                        
-                    elif composition[c] > kj_relations[c]:  # si le score de la relation composée est supérieur au score actuel dans kj_relations
-                        
-                       
+
+                    elif composition[c] > kj_relations[c]:
+
+
                         kj_relation_status = relation_statuses(qcn_copy[(k, j)]).get(c)
                         if kj_relation_status == STATUS_OBSERVED:
                             qcn_copy[(k, j)][RELATIONS_KEY][c] = {
@@ -329,19 +329,19 @@ def propagateAndFilter(qcn: dict) -> dict:
                             }
                             qcn_copy[(j, k)] = converse_domain(qcn_copy[(k, j)])
                         elif kj_relation_status == STATUS_OBSERVED_AND_INFERRED:
-                            # No-op: observed support remains authoritative.
+
                             pass
                         elif kj_relation_status == STATUS_INFERRED:
-                            qcn_copy[(k, j)][RELATIONS_KEY][c] = {SUPPORT_KEY: composition[c], STATUS_KEY: STATUS_INFERRED}                        
+                            qcn_copy[(k, j)][RELATIONS_KEY][c] = {SUPPORT_KEY: composition[c], STATUS_KEY: STATUS_INFERRED}
                             qcn_copy[(j, k)] = converse_domain(qcn_copy[(k, j)])
                             if (k, j) not in queue:
                                 queue.append((k, j))
                         else:
                             print("Warning: we should not be here")
                             raise ValueError("Unexpected case in propagation: relation not in kj_relations but composition score is higher than kj_relations score")
-        
-                    elif composition[c] <= kj_relations[c]: # si le score de la relation composée est inférieur ou égal au score actuel dans kj_relations,
-                        #update score et statut
+
+                    elif composition[c] <= kj_relations[c]:
+
                         kj_relation_status = relation_statuses(qcn_copy[(k, j)]).get(c)
                         if kj_relation_status == STATUS_OBSERVED:
                             qcn_copy[(k, j)][RELATIONS_KEY][c] = {
@@ -350,19 +350,19 @@ def propagateAndFilter(qcn: dict) -> dict:
                             }
                             qcn_copy[(j, k)] = converse_domain(qcn_copy[(k, j)])
                         elif kj_relation_status in {STATUS_INFERRED, STATUS_OBSERVED_AND_INFERRED}:
-                            # No-op: no improvement and status already carries inference.
+
                             pass
                         else:
                             print("Warning: we should not be here")
                             raise ValueError("Unexpected case in propagation: relation not in kj_relations but composition score is higher than kj_relations score")
 
-    # Ne conserver que les relations observées et/ou inférées.
+
     allowed_statuses = {
         STATUS_OBSERVED,
         STATUS_INFERRED,
         STATUS_OBSERVED_AND_INFERRED,
     }
-    for pair, domain in qcn_copy.items():       #filtrage
+    for pair, domain in qcn_copy.items():
         relations_to_remove = []
         for relation, payload in relation_entries(domain).items():
             status = normalize_relation_status(payload.get(STATUS_KEY))
@@ -416,7 +416,7 @@ def learner2(qcn: dict, entities: dict, properties: dict) -> dict | None:
         V = (p1, p2)
         oraclestart = time.process_time()
 
-        query_result = Query(V, entities)  # threshold free
+        query_result = Query(V, entities)
         oracle_end_time = time.process_time() - oraclestart
         total_oracle_calls += 1
         min_oracle_cpu_time = min(min_oracle_cpu_time, oracle_end_time)
@@ -426,20 +426,20 @@ def learner2(qcn: dict, entities: dict, properties: dict) -> dict | None:
         if query_result is not None:
             qcn[(p1, p2)] = copy.deepcopy(query_result)
 
-            # Mettre à jour la paire inverse avec les relations inverses
+
             qcn[(p2, p1)] = converse_domain(qcn[(p1, p2)])
 
             if not relation_entries(
                 qcn[(p1, p2)]
-            ):  # si le domaine de C(p1,p2) est vide, on arrête l'apprentissage (incohérence)
+            ):
                 print(f"COLLAPSE: apres la requête sur {V} ! ORIGINE: ORACLE")
                 return None
 
     oracle_phase_cpu_endtime = time.process_time() - oracle_phase_start
-    # Sauvegarder le QCN après oracle
+
     qcn_after_oracle = copy.deepcopy(qcn)
 
-    # Statistiques sur le QCN après oracle
+
     qcn_stats = compute_qcn_relation_stats(qcn_after_oracle)
     after_oracle_report_stats = compute_after_oracle_report_stats(qcn_after_oracle)
     avg_oracle_cpu = oracle_sum_cpu_time / total_oracle_calls if total_oracle_calls > 0 else 0.0
@@ -566,7 +566,7 @@ def learner2(qcn: dict, entities: dict, properties: dict) -> dict | None:
             "cumulative_after_propagation_cpu_time": cumulative_after_propagation,
         },
 
-        #"stats": reduction_stats,
+
     }
 
 
@@ -698,7 +698,7 @@ def compute_after_oracle_report_stats(qcn: dict) -> dict:
         has_observed_status = False
         has_none_support = False
 
-        # Empty domain means no evidence remained for this property pair.
+
         if not entries:
             has_none_support = True
 
@@ -804,12 +804,12 @@ def processReductionRates(initialQCN, QCNAfterOracle, QCNAfterPC):
     :return: dict contenant les statistiques de réduction
     """
 
-    # Calculer les statistiques
+
     initial_count = count_total_relations(initialQCN)
     after_oracle_count = count_total_relations(QCNAfterOracle)
     after_pc_count = count_total_relations(QCNAfterPC)
 
-    # Calculer les taux de réduction
+
     oracle_reduction = (
         ((initial_count - after_oracle_count) / initial_count * 100)
         if initial_count > 0
@@ -848,18 +848,18 @@ def save_qcn_to_file(learning_result: dict, kg_type: str):
     :param learning_result: dict contenant 'initial', 'after_oracle', 'after_propagation', 'stats'
     :param kg_type: type du knowledge graph
     """
-    # Créer le dossier Results/Q.../ s'il n'existe pas
+
     results_dir = results_root / kg_type
     os.makedirs(results_dir, exist_ok=True)
 
-    # Noms des fichiers
+
     output_stem = build_output_stem(kg_type)
     qcn_filename = f"{output_stem}.json"
     stats_filename = f"{output_stem}_stats.txt"
     qcn_path = results_dir / qcn_filename
     stats_path = results_dir / stats_filename
 
-    # 1. Sauvegarder les QCNs en JSON
+
     def convert_qcn_for_json(qcn):
         """Convertit le QCN en format JSON-compatible"""
         return {f"{k[0]}___{k[1]}": v for k, v in qcn.items()}
@@ -878,7 +878,7 @@ def save_qcn_to_file(learning_result: dict, kg_type: str):
 
     print(f"✅ QCNs saved to: {qcn_path}")
 
-    # 2. Sauvegarder les statistiques en format texte lisible
+
     stats = learning_result.get("stats")
     oracle_stats = learning_result.get("oracle_stats", {})
     property_filter_stats = learning_result.get("property_filter_stats", {})
@@ -926,7 +926,7 @@ def save_qcn_to_file(learning_result: dict, kg_type: str):
             f.write("## ADDITIONAL INFORMATION\n")
             f.write(f"Number of constraints (pairs)    : {stats['num_constraints']:>8}\n")
 
-            # Relations moyennes par contrainte
+
             avg_initial = (
                 stats["initial_total_relations"] / stats["num_constraints"]
                 if stats["num_constraints"] > 0
@@ -1232,7 +1232,7 @@ def learner_with_timeout(
         try:
             learning_result = result.get(timeout=timeout)
             if learning_result is not None:
-                # Sauvegarder les QCNs et les statistiques
+
                 save_qcn_to_file(learning_result, kgName)
             return learning_result
         except mp.TimeoutError:
@@ -1261,15 +1261,15 @@ def Query(Vocabulary, entities):
 
     for r in (
         ALLEN_RELATIONS
-    ):  # initialisation du compteur de correspondances pour chaque relation d'Allen
+    ):
         allenrelMatching[r] = 0
     nbr_total = 0
 
     for head in entities:
         properties_of_head = entities[head].triples_per_p.keys()
         if p1 not in properties_of_head or p2 not in properties_of_head:
-            continue  # Skip this entity if it doesn't have both properties
-        else:  # Si l'entité est décrite par les deux propriétés
+            continue
+        else:
             quadruplet_p1 = entities[head].triples_per_p.get(p1)
             quadruplet_p2 = entities[head].triples_per_p.get(p2)
             for qp1 in quadruplet_p1:
@@ -1277,23 +1277,23 @@ def Query(Vocabulary, entities):
                     nbr_total += 1
                     answers = AllenR.AllenRelation(
                         qp1, qp2
-                    ).check_all_axioms()  # vérification de toutes les relations d'Allen entre les deux quadruplets
+                    ).check_all_axioms()
                     for (
                         r,
                         holds,
-                    ) in answers.items():  # mise à jour du compteur de correspondances pour chaque relation d'Allen
+                    ) in answers.items():
                         if holds:
                             allenrelMatching[r] += 1
 
     if nbr_total == 0.0:
-        # Aucun couple de faits (p1, p2) observé dans le graphe: support/status restent à None.
+
         no_evidence_supports = {relation: None for relation in ALLEN_RELATIONS}
         return with_relation_data(
             no_evidence_supports,
             {relation: None for relation in ALLEN_RELATIONS},
         )
     else:
-        # Retourner les scores (proportion d'entités vérifiant chaque relation)
+
         for r in ALLEN_RELATIONS:
             allenrelMatching[r] = allenrelMatching[r] / nbr_total
         return with_relation_data(
@@ -1311,38 +1311,38 @@ def Query(Vocabulary, entities):
 def analyze_qcn_scores(kg_type: str) -> dict | None:
     """
     Analyse un fichier JSON QCN pour compter les pourcentages de relations par catégorie de score.
-    
+
     :param kg_type: type du knowledge graph (Q6256, Q215380, Q82955)
     :return: dict contenant les statistiques par QCN (after_oracle, after_propagation)
     """
     qcn_path = results_root / kg_type / f"{build_output_stem(kg_type)}.json"
-    
+
     if not qcn_path.exists():
         print(f"Fichier non trouvé: {qcn_path}")
         return None
-    
+
     with qcn_path.open("r", encoding="UTF-8") as f:
         qcn_data = json.load(f)
-    
+
     results = {}
-    
+
     for qcn_name in ["after_oracle", "after_propagation"]:
         if qcn_name not in qcn_data:
             continue
-            
+
         qcn = qcn_data[qcn_name]
-        
+
         total_relations = 0
-        count_repaired = 0  # score == -1
-        count_no_entities = 0  # score == -2
-        count_observed = 0  # score > 0
-        count_zero = 0  # score == 0
-        
-        # Parcourir toutes les paires dans le QCN
+        count_repaired = 0
+        count_no_entities = 0
+        count_observed = 0
+        count_zero = 0
+
+
         for pair_key, domain in qcn.items():
             for relation, score in relation_scores(domain).items():
                 total_relations += 1
-                
+
                 if score == -1.0:
                     count_repaired += 1
                 elif score == -2.0:
@@ -1351,8 +1351,8 @@ def analyze_qcn_scores(kg_type: str) -> dict | None:
                     count_observed += 1
                 elif score == 0:
                     count_zero += 1
-        
-        # Calculer les pourcentages
+
+
         if total_relations > 0:
             results[qcn_name] = {
                 "total_relations": total_relations,
@@ -1365,25 +1365,25 @@ def analyze_qcn_scores(kg_type: str) -> dict | None:
                 "zero_count": count_zero,
                 "zero_percent": (count_zero / total_relations) * 100,
             }
-    
+
     return results
 
 
 def print_score_analysis(kg_type: str):
     """
     Affiche l'analyse des scores pour un KG donné.
-    
+
     :param kg_type: type du knowledge graph
     """
     results = analyze_qcn_scores(kg_type)
-    
+
     if not results:
         return
-    
+
     print(f"\n{'=' * 70}")
     print(f"ANALYSE DES SCORES - Knowledge Graph: {kg_type}")
     print(f"{'=' * 70}\n")
-    
+
     for qcn_name, stats in results.items():
         print(f"📊 {qcn_name.upper().replace('_', ' ')}")
         print(f"   Total de relations: {stats['total_relations']}")
@@ -1426,7 +1426,7 @@ def main() -> None:
         entities=entities,
     )
 
-    # Keep only properties actually retained by support filtering.
+
     properties = sorted({p for pair in entity_network.keys() for p in pair})
     kept_properties = set(properties)
     kept_facts_count = 0
@@ -1452,7 +1452,7 @@ def main() -> None:
 
     if learned_entity_network is not None:
         print(f"✅ Apprentissage terminé avec succès pour {kg_name}")
-        # Afficher l'analyse des scores
+
         print_score_analysis(kg_name)
     else:
         print(f"⚠️ Apprentissage interrompu par timeout pour {kg_name}")

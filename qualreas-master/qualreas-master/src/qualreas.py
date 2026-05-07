@@ -3,13 +3,13 @@
 
 """
 
-# BITSETS: https://bitsets.readthedocs.io/en/stable/
+
 from bitsets import bitset, bases
 import os
 import json
 import random
 import string
-# NETWORKX: https://networkx.github.io/
+
 import networkx as nx
 from functools import reduce
 from collections import abc, OrderedDict
@@ -32,17 +32,17 @@ def flatten(lst):
     return reduce(lambda x, y: x + y, lst)
 
 
-# The fundamental algebraic elements here are SETS of relations, not individual relations.
-# An individual relation, r, relates two temporal entities (te), e.g, teA r teB.  Sets
-# of relations denote disjunctions, e.g., teA {r,s} teB <==> (teA r teB) or (teA s teB).
-# Here, we use '|' to denote 'or' and we abbreviate sets like {r,s} with 'r|s'.  All of
-# the relation sets (referred to here as "relsets") are finite and come from a finite
-# population of relations. The functionality needed to implement such finite sets of relations
-# is provided for by the BitSet module and all we really need to do is extend it a bit (no pun
-# intended) to allow for the abbreviation mentioned, above, and an addition (+) operation,
-# which is really just set intersection.  We would include the compose operation also, using
-# the multiply operator (*), however, that operation is dependent on Algebra being used,
-# so it can only be defined within the context of an Algebra, as a method (see farther below).
+
+
+
+
+
+
+
+
+
+
+
 
 class RelSet(bases.BitSet):
 
@@ -53,87 +53,87 @@ class RelSet(bases.BitSet):
         return self.intersection(rs)
 
 
-# Spatial and Temporal Entities:
-#
-# Since the focus here is on relations between spatial & temporal entities, the reification
-# of those entities, as actual classes, would seem to be unnecessary.  However, all relations
-# have both a DOMAIN and a RANGE, which denote the ontological classes of the entities being
-# related.  In Allen's original algebra of time intervals, the only ontological
-# class supported is the proper time interval; not points, nor improper time intervals.
-# And, since Allen's algebra only supported one class, domains and ranges could, and were,
-# essentially ignored in his paper and much subsequent work. (Some consideration was given to
-# whether time intervals included their end points or not, but nothing was put into a rigorous
-# mathematical context in early papers.)  The algebras defined and developed in this module,
-# however, support multiple ontological classes, e.g., time points (or instants) and proper
-# time intervals.  Hence, it is necessary to store information about domains and ranges
-# somewhere.  Temporal and Spatial Entities are convenient for doing that.  They may also be
-# used for storing metric information by some potential, future add-on to this module.
-# Additionally, they can also be used as nodes in a network of spatio-temporal constraints.
 
-# Also, a note on domains and ranges in the context of relation composition:
-# All relations have a domain and a range.  If D1, R1, D2, and R2 are the domains and ranges
-# of relations r1 & r2, resp., then the composition of r1 and r2 (written r1;r2 in algebraic
-# logic literature) requires that the intersection of R1 and D2 be non-empty.  To see why,
-# consider what the composition means wrt the associated Temporal Entities, teA, teB, and
-# teC, where (teA r1 teB) and (teB r2 teC).  The ontological classes that teB belongs to
-# must include the range of r1 (R1) and the domain of r2 (D2) for r1;r2 to make sense.
-#
-#                r1         r2
-#          teA -----> teB -----> teC
-#           D1       R1,D2        R2
-#            |                    ^
-#            |                    |
-#            +--------------------+
-#                     r1;r2
-#
-# Matrix multiplication, M x N, provides an analogy: the number of columns of M must
-# match the number of rows of N.
 
-# NOTE: Ontological classes can be organized hierarchically, and so can object-oriented
-# programming (OOP) classes, so it might be tempting to use OOP to represent the ontology
-# of spatio-temporal "objects" (entities), however, ontological classes are different,
-# and so the classes to which a particular Temporal Entity belongs are stored, instead, as a
-# list of ontological class name strings, in a field within the Temporal Entity
-# object, using names that conform to those found in the W3.org's time ontology ("Point",
-# "ProperInterval", "Duration").  See https://www.w3.org/TR/owl-time/.
 
-# TODO: Eliminate Entities.  Just use NetworkX node attributes.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class TemporalEntity:
     """A temporal entity, such as Time Instant/Point or Time Interval."""
 
     def __init__(self, classes, name=None):
-        self.classes = classes  # Ontological Classes, e.g., Point, ProperInterval
+        self.classes = classes
         self.name = make_name(name=name, prefix="TE:", size=8)
 
     def __repr__(self):
         return f"TemporalEntity({self.classes} \'{self.name}\')"
 
 
-# Don't have a good source yet for a spatial vocabulary,
-# but see https://www.w3.org/2017/sdwig/bp/
+
+
 class SpatialEntity:
     """A spatial entity, such as a spatial feature or thing (e.g., Point, Area)."""
 
     def __init__(self, classes, name=None):
-        self.classes = classes  # Ontological, not OOP
+        self.classes = classes
         self.name = make_name(name=name, prefix="SE:", size=8)
 
     def __repr__(self):
         return f"SpatialEntity({self.classes} \'{self.name}\')"
 
 
-# The following dictionary is used when loading a JSON specification
-# for a network so that entity classes can be resolved into class (type)
-# constructors.
+
+
+
 class_type_dict = {"ProperInterval": TemporalEntity,
                    "Point": TemporalEntity,
                    "Region": SpatialEntity,
                    "2DPoint": SpatialEntity}
 
 
-# Abbreviations used by the Algebra Summary method:
-# TODO: Create a separate file for this; or perhaps don't abbreviate at all
+
+
 def abbrev(term_list):
     """Given a list of terms, return the corresponding list of abbreviated terms."""
     abbrev_dict = {"Point": "Pt",
@@ -174,18 +174,18 @@ class Algebra:
 
         self.elements = self.elements_bitset.supremum
 
-        # The equality relations of the algebra
+
         self.__equality_relations = self.relset([rel for rel in self.elements if self.rel_equality(rel)])
 
-        # Create a dict to return equality relations, keyed on their domain or range name
+
         self.equality_relations_dict = dict()
         for eqrel in self.__equality_relations:
-            dom = self.rel_domain(eqrel)[0]  # Get the single item out of the eqrel's domain set.
+            dom = self.rel_domain(eqrel)[0]
             self.equality_relations_dict[dom] = self.relset([eqrel])
 
-        # Setup the transitivity (or composition) table to be used by Relation Set composition.
-        # This code can read both the original transitivity table format and the newer compact
-        # transitivity table format, which is now the default.
+
+
+
         self.transitivity_table = dict()
         tabledefs = self.algebra_dict["TransTable"]
         for rel1 in tabledefs:
@@ -196,17 +196,17 @@ class Algebra:
                     entry = table_entry
                 elif type(table_entry) == str:
                     if table_entry == "":
-                        entry = []  # because "".split('|') = ['']
+                        entry = []
                     else:
                         entry = table_entry.split('|')
                 else:
                     raise Exception("Bad entry in transitivity table")
-                # print(rel1, rel2)
+
                 self.transitivity_table[rel1][rel2] = self.elements_bitset(tuple(entry))
 
-    # TODO: Write a to_dict() method for Algebras
 
-    # Accessors for information about a given relation:
+
+
 
     def rel_name(self, rel):
         return self.rel_info_dict[rel]["Name"]
@@ -258,12 +258,12 @@ class Algebra:
 
     def relset(self, relations):
         """Return a relation set (bitset) for the given relations."""
-        if isinstance(relations, str):  # if relations is like 'B|M|O' or 'B', or ''
+        if isinstance(relations, str):
             if relations == '':
                 return self.relset([])
             else:
                 return self.string_to_relset(relations)
-        elif isinstance(relations, abc.Iterable):  # relations is like ['B','M','O'], ('B',), or []
+        elif isinstance(relations, abc.Iterable):
             return self.elements_bitset(relations)
         else:
             raise TypeError("Input must be a string, list, tuple, or set.")
@@ -278,7 +278,7 @@ class Algebra:
         then reducing those results to a single relation set using set
         union.
         """
-        result = self.elements_bitset.infimum  # the empty relation set
+        result = self.elements_bitset.infimum
         for r1 in relset1:
             for r2 in relset2:
                 result = result.union(self.transitivity_table[r1][r2])
@@ -340,14 +340,14 @@ class Algebra:
         print("{:>25s} {:>25s} {:>10s} {:>10s} {:>10s} {:>8s} {:>12s}".format("NAME (SYMBOL)", "CONVERSE (ABBREV)",
                                                                               "REFLEXIVE", "SYMMETRIC", "TRANSITIVE",
                                                                               "DOMAIN", "RANGE"))
-        # TODO: Vary spacing between columns based on max word lengths
-        # For syntax used below see https://docs.python.org/3/library/string.html#format-string-syntax
+
+
         for r in self.elements:
             print(f"{self.rel_name(r):>19s} ({r:>3s}) "
                   f"{self.rel_name(self.converse(r)):>19s} ({self.converse(r):>3s}) "
                   f"{self.rel_reflexive(r)!s:>8} {self.rel_symmetric(r)!s:>10} {self.rel_transitive(r)!s:>10}"
                   f"{abbrev(self.rel_domain(r))!s:>11} {abbrev(self.rel_range(r))!s:>13}")
-        # TODO: Don't hard code the legend below; make it depend on an abbreviations file (JSON)
+
         print("\nDomain & Range Abbreviations:")
         print("   Pt = Point")
         print(" PInt = Proper Interval")
@@ -424,11 +424,11 @@ class Algebra:
         needed again."""
         num_elements = len(self.elements)
         print("    \"TransTable\": {")
-        outer_count = num_elements  # Used to avoid printing last comma in outer list
+        outer_count = num_elements
         for rel1 in self.transitivity_table:
             outer_count -= 1
             print(f"        \"{rel1}\": {{")
-            inner_count = num_elements  # Used to avoid printing last comma in inner list
+            inner_count = num_elements
             for rel2 in self.transitivity_table[rel1]:
                 inner_count -= 1
                 if inner_count > 0:
@@ -462,50 +462,50 @@ class Network(nx.DiGraph):
                  algebra_path=None, json_file_name=None, network_dict=None,
                  json_ext=".json"):
 
-        # Create the network in dictionary form (net_dict)
+
         if json_file_name:
             with open(json_file_name, "r") as json_file:
                 net_dict = json.load(json_file)
             json_file.close()
-        # ...or use the input dictionary,
+
         elif network_dict:
             net_dict = network_dict
-        # ...or start from scratch (assumes an Algebra was input, though).
+
         else:
             net_dict = {"name": make_name(name),
                         "description": "undefined",
                         "nodes": [],
                         "edges": []}
 
-        # If an algebra was input, use it...
+
         if algebra:
             self.algebra = algebra
-        # ...otherwise read the required algebra from a JSON file.
+
         else:
             self.algebra = Algebra(os.path.join(algebra_path, net_dict["algebra"]) + json_ext)
 
-        # TODO: Make name & description attributes of the DiGraph
+
         if "name" in net_dict:
             name = net_dict["name"]
         if "description" in net_dict:
             self.description = net_dict["description"]
 
-        # Create 'nodes' as a dictionary where key:value = node_name:node_classes
-        # TODO: Eliminate this dictionary and incorporate it in 'entities' below
+
+
         node_list = net_dict["nodes"]
         nodes = dict()
         for nd in node_list:
             nodes[nd[0]] = nd[1]
 
-        # Create 'entities' as a dictionary where key:value = node_name:Entity(classes, node_name)
+
         entities = dict()
         for node_name, node_classes in nodes.items():
             entities[node_name] = class_type_dict[node_classes[0]](node_classes, node_name)
 
-        # Initialize the superclass
+
         super().__init__(name=make_name(name))
 
-        # Add the constraint to the network as an attribute on an edge
+
         for edge_spec in net_dict["edges"]:
             if len(edge_spec) == 3:
                 cons = edge_spec[2]
@@ -523,7 +523,7 @@ class Network(nx.DiGraph):
     def remove_constraint(self, entity1, entity2):
         """Removes the directed edge between the two entities, where entity1 is the tail
         and entity2 is the head of the edge."""
-        # Remove edges in both directions
+
         if self.has_edge(entity1, entity2):
             self.remove_edge(entity1, entity2)
         if self.has_edge(entity2, entity1):
@@ -549,7 +549,7 @@ class Network(nx.DiGraph):
     def add_constraint(self, entity1, entity2, relation_set=None, verbose=False):
         """Same as add_edge, except that two edges are added with converse constraints."""
 
-        # Get the proper equality relation(s) for each of the two entities
+
         eq_rels1 = reduce(lambda r1, s1: r1.union(s1),
                           (map(lambda t1: self.algebra.get_domain_or_range_equality_rel(t1),
                                entity1.classes)))
@@ -557,28 +557,28 @@ class Network(nx.DiGraph):
                           (map(lambda t2: self.algebra.get_domain_or_range_equality_rel(t2),
                                entity2.classes)))
 
-        # Each entity must equal itself
+
         self.__set_equality_constraint(entity1, eq_rels1, verbose)
         self.__set_equality_constraint(entity2, eq_rels2, verbose)
 
-        # Override any previously set constraint on this pair of entities
+
         self.remove_constraint(entity1, entity2)
 
-        # Handle different expressions for a relation set:
-        # If None, then use all relations (elements) as constraint
+
+
         if not relation_set:
             rel_set = self.algebra.elements
-        # If it's a string, assume it's in the form 'a' or 'a|b|c'
+
         elif isinstance(relation_set, str):
             rel_set = self.algebra.string_to_relset(relation_set)
-        # Or maybe it's actually a RelSet
+
         elif isinstance(relation_set, RelSet):
             rel_set = relation_set
-        # Otherwise, throw an exception
+
         else:
             raise TypeError("relation_set must be None, a String, or a RelSet")
 
-        # Add the constraint and it's converse
+
         rel_set_converse = self.algebra.converse(rel_set)
         self.add_edge(entity1, entity2, constraint=rel_set)
         self.add_edge(entity2, entity1, constraint=rel_set_converse)
@@ -591,7 +591,7 @@ class Network(nx.DiGraph):
         """Assuming that an edge exists between tail & head, this function destructively changes
          whatever constraint was between them to be relset"""
         self.edges[tail, head]['constraint'] = relset
-        # Don't bother looking at the converse for equality relations
+
         if tail != head:
             self.edges[head, tail]['constraint'] = self.algebra.converse(relset)
 
@@ -662,10 +662,10 @@ class Network(nx.DiGraph):
         """
         loop_count = 0
         self.__set_unconstrained_values(verbose)
-        something_changed = True  # We'll iterate at least once
+        something_changed = True
         try:
             while something_changed:
-                something_changed = False  # If nothing changes, we'll only iterate once
+                something_changed = False
                 loop_count += 1
                 for ent1 in self.nodes():
                     for ent2 in self.nodes():
@@ -676,14 +676,14 @@ class Network(nx.DiGraph):
                             c32 = self.edges[ent3, ent2]['constraint']
                             prod += self.algebra.compose(c13, c32)
                         if prod != c12:
-                            something_changed = True  # Continue iterating
+                            something_changed = True
                         self.edges[ent1, ent2]['constraint'] = prod
-                        # If any product is empty then the Network is inconsistent
+
                         if not prod.any():
                             raise InconsistentNetwork
-            # Update the Entity/Node classes to reflect changes due to constraint propagation
+
             for nd in self.nodes():
-                # Only consider domains since the edges below are from the node to itself
+
                 nd.classes = list(self.algebra.get_domain_classes(self.edges[nd, nd]['constraint']))
             if verbose:
                 print(f"Number of iterations: {loop_count}")
@@ -716,20 +716,20 @@ class Network(nx.DiGraph):
             "nodes": [],
             "edges": []
         }
-        # Create an entry for each node in the dictionary, including the classes
-        # that each node is in, based on the domain of the equality relations on
-        # the edge from each node to itself.
+
+
+
         for node in self.nodes:
             self_constraints = self.get_edge(node.name, node.name)[2]
             classes = list(self.algebra.get_domain_classes(self_constraints))
             net_dict["nodes"].append([node.name, classes])
-        reverse_edges = set()  # Keep track of reverse edges and don't output them
+        reverse_edges = set()
         for head in self.nodes:
             for tail in self.neighbors(head):
-                if head.name != tail.name:  # Don't output an edge from a node to itself
+                if head.name != tail.name:
                     if not ((head.name, tail.name) in reverse_edges):
                         net_dict["edges"].append(list(self.get_edge(head.name, tail.name)))
-                        reverse_edges.add((tail.name, head.name))  # Remember the reverse of this edge
+                        reverse_edges.add((tail.name, head.name))
         return net_dict
 
     def mostly_copy(self):
@@ -796,9 +796,9 @@ class Network(nx.DiGraph):
         return ','.join(result)
 
 
-# IMPORTANT: The only intended purpose of the class, FourPointNet, is to generate point-based
-# representations of interval relations using the function, generate_consistent_networks.
-# It has no other intended purpose.
+
+
+
 
 class FourPointNet(Network):
     """Create four Temporal Entities that represent time points and use them
@@ -810,12 +810,12 @@ class FourPointNet(Network):
     def __init__(self, algebra, name, lessthanstr, startname="StartPt", endname="EndPt"):
         self.algebra = algebra
         self.lessthan = algebra.relset(lessthanstr)
-        # Start & End Points of Interval 1
+
         s1 = startname + "1"
         e1 = endname + "1"
         self.start1 = TemporalEntity(["Point"], name=s1)
         self.end1 = TemporalEntity(["Point"], name=e1)
-        # Start & End Points of Interval 2
+
         s2 = startname + "2"
         e2 = endname + "2"
         self.start2 = TemporalEntity(["Point"], name=s2)
@@ -830,8 +830,8 @@ class FourPointNet(Network):
         end point #1, start point #2, and end point #2."""
         return [self.start1, self.end1, self.start2, self.end2]
 
-    # def get_point_names(self):
-    #     return map(lambda pt: pt.name, self.get_points())
+
+
 
     def __ontology_classes(self, start, end):
         """The constraints between the start and end points of a temporal entity
@@ -852,8 +852,8 @@ class FourPointNet(Network):
                 self.__ontology_classes(self.start2, self.end2))
 
 
-# Map 4-Point network "signatures" to typical relation names.
-# This mapping is used in generate_consistent_networks, below.
+
+
 signature_name_mapping = {
     '<,<,<,<': 'B', '>,>,>,>': 'BI',
     '>,<,>,<': 'D', '<,<,>,>': 'DI',
@@ -872,12 +872,12 @@ signature_name_mapping = {
     'l~,<,l~,<': 'LB', 'l~,l~,l~,l~': 'L~'
 }
 
-# This is the reverse dictionary of the 'signature_name_mapping' dictionary, above.
+
 name_signature_mapping = {val: key.split(',') for key, val in signature_name_mapping.items()}
 
 
-# The dictionary below includes Allen's Interval Algebra relations plus the additional
-# relations defined in [Reich 1994] for Points and Left/Right-Branching Time algebras.
+
+
 relation_long_names = {
     "B": "Before",
     "BI": "After",
@@ -912,25 +912,25 @@ relation_long_names = {
 }
 
 
-# A 4-point network (generated by FourPoint) only has constraints specified so that the first two points define an
-# interval, and same for the second two points. No constraints are specified between the two implied intervals (e.g.,
-# no constraint between StartPt1/EndPt1 and StartPt2/EndPt2).  Depending on which point algebra is used there are
-# either 3^4 (81) or 4^4 (256) different ways the unassigned constraint pairs can be made.  The function,
-# <i>generate_consistent_networks</i> tries all of these possibilities and returns the ones that are consistent.
-# Doing this for the linear point algebra ('<', '=', '>') results in 13 consistent networks that correspond to
-# Allen's Temporal Algebra of Proper Time Intervals.  Using ('<|=', '=', '>|=") results in 18 consistent networks
-# that are a superset of Allen's relations that includes 5 additional relations that integrate points into the
-# algebra.  Using ('<|=', '=', '>|=', '~'), where '~' is either the left-incomparable or right-incomparable relation
-# of the left- or right-branching time point algebra will result in 24 consistent networks that integrate points into
-# a left- or right-branching time interval algebra.
 
-# Viewing the network as a matrix, 'elem13', below, refers to the element in row 1 col 3,
-# and so on for 'elem23', etc.  The matrix is 4x4, so if we partition it into four 2x2
-# matrices, then the two partitions on the diagonal represent two intervals and the two
-# off-diagonal partitions represent how the end points those two intervals relate to
-# each other. Also, the off-diagonal 2x2 partitions are converse transposes of each other.
-# Oh, and the intervals represented by the diagonal partitions could be intervals,
-# proper intervals, or points.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def generate_consistent_networks(point_algebra, lessthan="<", startname="StartPt", endname="EndPt",
@@ -942,7 +942,7 @@ def generate_consistent_networks(point_algebra, lessthan="<", startname="StartPt
         for elem23 in point_algebra.elements:
             for elem14 in point_algebra.elements:
                 for elem24 in point_algebra.elements:
-                    # four_pt_net_name = elem13 + ',' + elem23 + ',' + elem14 + ',' + elem24
+
                     four_pt_net_name = elem13 + ',' + elem14 + ',' + elem23 + ',' + elem24
                     ptnet = FourPointNet(point_algebra, four_pt_net_name, lessthan, startname, endname)
                     pt1, pt2, pt3, pt4 = ptnet.get_points()
@@ -979,19 +979,19 @@ class SixPointNet(Network):
         self.algebra = algebra
         self.lessthan = algebra.relset(lessthanstr)
 
-        # Start & End Points of Interval 1
+
         s1 = startname + "1"
         e1 = endname + "1"
         self.start1 = TemporalEntity(["Point"], name=s1)
         self.end1 = TemporalEntity(["Point"], name=e1)
 
-        # Start & End Points of Interval 2
+
         s2 = startname + "2"
         e2 = endname + "2"
         self.start2 = TemporalEntity(["Point"], name=s2)
         self.end2 = TemporalEntity(["Point"], name=e2)
 
-        # Start & End Points of Interval 3
+
         s3 = startname + "3"
         e3 = endname + "3"
         self.start3 = TemporalEntity(["Point"], name=s3)
@@ -1045,11 +1045,11 @@ def derive_composition(point_algebra, eq_rel, rel1, rel2):
     pt_net = SixPointNet(point_algebra, eq_rel, rel1, rel2)
     pt_name_list = pt_net.name_list
     pt_net.propagate()
-    # print(f"Derive Comp for: {np.array(pt_net.to_list())}")  # DEBUG
+
     pt_net_realz = pt_net.consistent_singleton_labelings()
     comps = set()
     for realz in pt_net_realz:
-        # diag = realz.get_2x2_partition_constraints(0, 0, pt_name_list)
+
         comp = realz.get_2x2_partition_constraints(0, 4, pt_name_list)
         comps.add(signature_name_mapping[comp])
     comps_list = list(comps)
@@ -1066,8 +1066,8 @@ def derive_composition_table(point_algebra, less_than_rel, relations_list):
     return trans_dict
 
 
-# def is_transitive(rel_name, pt_alg, less_than_rel):
-#     return rel_name == derive_composition(pt_alg, less_than_rel, rel_name, rel_name)
+
+
 
 
 def is_transitive(rel_name, transitivity_table):
@@ -1192,7 +1192,7 @@ if __name__ == '__main__':
     print("Check network propagation for interval algebras")
     print("-----------------------------------------------")
 
-    # Interval Algebras
+
 
     entity_x = TemporalEntity(["ProperInterval"], "X")
     entity_y = TemporalEntity(["ProperInterval"], "Y")
@@ -1208,7 +1208,7 @@ if __name__ == '__main__':
         net.propagate(True)
         net.summary()
 
-    # Point Algebras
+
 
     entity_x = TemporalEntity(["Point"], "X")
     entity_y = TemporalEntity(["Point"], "Y")
@@ -1224,7 +1224,7 @@ if __name__ == '__main__':
         net.propagate()
         net.summary()
 
-    # RCC8 Algebra
+
 
     entity_x = SpatialEntity(["Region"], "X")
     entity_y = SpatialEntity(["Region"], "Y")
@@ -1258,8 +1258,8 @@ if __name__ == '__main__':
     net2.propagate()
     net2.summary()
 
-    # Example in book on constraint processing for temporal reasoning
-    # (extended to intervals & points)
+
+
     pint_I = TemporalEntity(["Point", "ProperInterval"], "I")
     pint_J = TemporalEntity(["Point", "ProperInterval"], "J")
     pint_K = TemporalEntity(["Point", "ProperInterval"], "K")
@@ -1280,45 +1280,45 @@ if __name__ == '__main__':
     print("Example from http://en.wikipedia.org/wiki/RCC8")
     print("----------------------------------------------")
 
-    # Algebra(os.path.join(path, "Algebras/Linear_Interval_Algebra.json"
 
-    # rcc8x = Network(algebra_path=path+"/Algebras/",
-    #                 json_file_name=path+"/Networks/rcc8_example.json")
 
-    # print(f"Path = {path}")
-    # alg_path = os.path.join(path, "Algebras")
-    # print(f"Alg path = {alg_path}")
-    # json_fname = os.path.join(path, "Networks/rcc8_example.json")
-    # print(f"JSON path = {json_fname}")
+
+
+
+
+
+
+
+
     rcc8x = Network(algebra_path=os.path.join(path, "Algebras"),
                     json_file_name=os.path.join(path, "Networks/rcc8_example.json"))
     rcc8x.summary()
     rcc8x.propagate()
     rcc8x.summary()
 
-    # # alg4 = Algebra(os.path.join(path, "Algebras/RCC8_Algebra.json"))
-    # alg4 = alg[4]
-    #
-    # house1 = SpatialEntity(["Region"], "house1")
-    # house2 = SpatialEntity(["Region"], "house2")
-    # property1 = SpatialEntity(["Region"], "property1")
-    # property2 = SpatialEntity(["Region"], "property2")
-    # road = SpatialEntity(["Region"], "road")
-    #
-    # net4 = Network(alg4, "Wikipedia RCC8 Example")
-    #
-    # net4.add_constraint(house1, house2, "DC", verbosity)
-    # net4.add_constraint(house1, property1, "TPP|NTPP", verbosity)
-    # net4.add_constraint(house1, property2, "DC|EC", verbosity)
-    # net4.add_constraint(house1, road, "EC", verbosity)
-    # net4.add_constraint(house2, property1, "DC|EC", verbosity)
-    # net4.add_constraint(house2, property2, "NTPP", verbosity)
-    # net4.add_constraint(house2, road, "EC", verbosity)
-    # net4.add_constraint(property1, property2, "DC|EC", verbosity)
-    #
-    # net4.summary()
-    # net4.propagate()
-    # net4.summary()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     print("""\nNote on example above:
     According to Wikipedia,
@@ -1329,10 +1329,10 @@ if __name__ == '__main__':
       road property1 EC|PO
       road property2 PO|TPP""")
 
-    # net4.converse().summary()
+
 
     print("""    ------------
     END OF TESTS
     ------------""")
 
-    # End of File
+

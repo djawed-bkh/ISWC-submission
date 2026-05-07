@@ -345,7 +345,7 @@ def _extract_supports_from_domain(raw_domain: Any) -> list[float]:
                         supports.append(float(support))
             return supports
 
-        # Legacy format: relation -> score
+
         for value in raw_domain.values():
             if value is not None and isinstance(value, (int, float)) and 0.0 <= float(value) <= 1.0:
                 supports.append(float(value))
@@ -383,19 +383,19 @@ def _extract_inferred_only_supports(
     if not isinstance(oracle_domain, Mapping) or not isinstance(propagation_domain, Mapping):
         return supports
 
-    # Get relation names in each domain
+
     oracle_relations = set()
     propagation_relations = set()
 
-    # Extract oracle relation names
+
     oracle_structured = oracle_domain.get("relations")
     if isinstance(oracle_structured, Mapping):
         oracle_relations.update(oracle_structured.keys())
     else:
-        # Legacy format: exclude the structural key "relations" if present
+
         oracle_relations.update(k for k in oracle_domain.keys() if k != "relations")
 
-    # Extract propagation relation names and supports for inferred-only ones
+
     propagation_structured = propagation_domain.get("relations")
     if isinstance(propagation_structured, Mapping):
         for relation, payload in propagation_structured.items():
@@ -404,7 +404,7 @@ def _extract_inferred_only_supports(
                 if support is not None and isinstance(support, (int, float)) and 0.0 <= float(support) <= 1.0:
                     supports.append(float(support))
     else:
-        # Legacy format: exclude the structural key "relations" if present
+
         for relation, value in propagation_domain.items():
             if relation == "relations":
                 continue
@@ -434,7 +434,7 @@ def _domain_has_positive_support(raw_domain: Any) -> bool:
                 return True
         return False
 
-    # Legacy format: relation -> score or relation -> payload
+
     for value in raw_domain.values():
         if value is not None and isinstance(value, (int, float)) and float(value) > 0.0:
             return True
@@ -461,7 +461,7 @@ def _count_positive_relations_in_domain(raw_domain: Any) -> int:
                 count += 1
         return count
 
-    # Legacy format: relation -> score or relation -> payload
+
     for value in raw_domain.values():
         if value is not None and isinstance(value, (int, float)) and float(value) > 0.0:
             count += 1
@@ -503,7 +503,7 @@ def _extract_statuses_from_domain(raw_domain: Any) -> list[str]:
                 statuses.append("other")
         return statuses
 
-    # Legacy format has no explicit status field.
+
     if isinstance(raw_domain, Mapping):
         for _ in raw_domain.values():
             statuses.append("none")
@@ -1002,7 +1002,7 @@ def plot_iswc_status_transitions_stacked() -> dict[str, dict[str, dict[str, floa
 
         summary[dataset] = stage_props
 
-        # Stacked bars: one for after_oracle, one for after_propagation.
+
         fig, ax = plt.subplots(figsize=(9, 5.5))
         x_labels = ["after_oracle", "after_propagation"]
         x_pos = [0, 1]
@@ -1190,7 +1190,7 @@ def plot_iswc_status_transition_heatmaps() -> dict[str, dict[str, Any]]:
                 ax.set_ylabel("Before propagation")
                 ax.tick_params(axis="y", left=True, labelleft=True)
             else:
-                # Keep shared y tick labels defined on the left axis only.
+
                 ax.tick_params(axis="y", left=False, labelleft=False)
 
             local_max = max(max(row) for row in percentages) if percentages else 0.0
@@ -1369,7 +1369,7 @@ def plot_iswc_support_distributions(bin_width: float = 0.10) -> dict[str, dict[s
         with json_path.open("r", encoding="UTF-8") as handle:
             payload = json.load(handle)
 
-        # Extract regular supports from both sections
+
         for section_name in ("after_oracle", "after_propagation"):
             section = payload.get(section_name)
             if not isinstance(section, Mapping):
@@ -1379,7 +1379,7 @@ def plot_iswc_support_distributions(bin_width: float = 0.10) -> dict[str, dict[s
                     _extract_supports_from_domain(raw_domain)
                 )
 
-        # Extract inferred-only supports (in propagation but not in oracle)
+
         after_oracle = payload.get("after_oracle")
         after_propagation = payload.get("after_propagation")
         if isinstance(after_oracle, Mapping) and isinstance(after_propagation, Mapping):
@@ -1393,7 +1393,7 @@ def plot_iswc_support_distributions(bin_width: float = 0.10) -> dict[str, dict[s
         oracle_values = section_values["after_oracle"]
         propagation_values = section_values["after_propagation"]
         inferred_only_values = section_values["inferred_only"]
-        
+
         oracle_zero_count = sum(1 for value in oracle_values if value == 0.0)
         propagation_zero_count = sum(1 for value in propagation_values if value == 0.0)
 
@@ -1424,7 +1424,7 @@ def plot_iswc_support_distributions(bin_width: float = 0.10) -> dict[str, dict[s
             label=f"after Propagate&Filter",
         )
 
-        # In the [0, 0.1] bin, hatch the part corresponding to supports exactly equal to 0.
+
         if oracle_counts and oracle_zero_count > 0:
             ax.bar(
                 [oracle_x_positions[0]],
@@ -1448,7 +1448,7 @@ def plot_iswc_support_distributions(bin_width: float = 0.10) -> dict[str, dict[s
                 linewidth=0.0,
             )
 
-        # Hatch the inferred-only relations (only in propagation, not in oracle)
+
         if inferred_only_counts:
             ax.bar(
                 propagation_x_positions,
@@ -1602,7 +1602,7 @@ def plot_qcn3_support_distributions(
             ax.bar([propagation_x[0]], [propagation_zero_count], width=series_width, align="edge",
                    facecolor="none", edgecolor="black", hatch="///", linewidth=0.0)
 
-        # Superpose inferred-only sur les barres propagation en hachuré vert.
+
         if inferred_only_counts:
             ax.bar(
                 propagation_x,
@@ -2020,8 +2020,8 @@ def checkConsistency(jsonfile: str, threshold: float = 1.0) -> bool:
 
     qcn = read_qcn_from_json(jsonfile)
 
-    # Si un domaine n'a aucune relation au-dessus du seuil,
-    # on le remplace par les 13 relations Allen neutres.
+
+
     qcn = _prepare_qcn_for_threshold(qcn, threshold)
 
     structured_qcn = to_structured_qcn(qcn)

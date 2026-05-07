@@ -6,7 +6,7 @@ Created on Sep 5, 2010
 
 from qualreas.QR import Relation, RelationSet, Algebra
 
-# Allen's TranSitivity Table for Proper Intervals
+
 
 B = Relation("Before", "B", isTransitive = True)
 Bi = Relation("After", "Bi", isTransitive = True)
@@ -233,6 +233,6 @@ table = {(B, B): __rs1,
 
 algebraAllen = Algebra("Allen's Algebra of Proper Intervals", allRelations, table)
 
-#class AlgebraAllen(Algebra):
-#    def __init__(self):
-#        Algebra.__init__("Allen's Algebra of Proper Intervals", allRelations, table)
+
+
+

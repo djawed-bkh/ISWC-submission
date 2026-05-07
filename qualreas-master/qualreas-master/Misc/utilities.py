@@ -1,4 +1,4 @@
-# Some utilities:
+
 
 from itertools import combinations, chain
 
@@ -7,7 +7,7 @@ def flatten(list_of_lists):
     return chain.from_iterable(list_of_lists)
 
 
-# TODO: Make the function list_of_combinations produce an iterator, rather than a list
+
 def list_of_combinations(items, make_sequence):
     """Given a list of items, return a list of all possible combinations of the items.
     Each combination is expressed in the form of whatever sequence building function

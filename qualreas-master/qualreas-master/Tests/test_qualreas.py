@@ -1,4 +1,4 @@
-#from unittest import TestCase
+
 import unittest
 import qualreas as qr
 import os
@@ -6,9 +6,9 @@ import os
 __author__ = 'Alfred J. Reich'
 
 
-# class MyTestCase(unittest.TestCase):
-#    def test_something(self):
-#        self.assertEqual(True, False)
+
+
+
 
 class TestRelation(unittest.TestCase):
     def setUp(self):
@@ -61,8 +61,8 @@ class TestRelationSet(unittest.TestCase):
         self.aaa = qr.Relation('aaa', 'a', 'A', 'testDomain', 'testRange')
         self.bbb = qr.Relation('bbb', 'b', 'B', 'testRange', 'testDomain')
 
-        self.AAA.set_converse(self.aaa)  # AAA & aaa are each others' converses
-        self.BBB.set_converse(self.bbb)  # BBB & bbb are each others' converses
+        self.AAA.set_converse(self.aaa)
+        self.BBB.set_converse(self.bbb)
         self.aaa.set_converse(self.AAA)
         self.bbb.set_converse(self.BBB)
 
@@ -70,7 +70,7 @@ class TestRelationSet(unittest.TestCase):
         self.relset_Bab = qr.RelationSet([self.aaa, self.bbb, self.BBB])
 
     def test_addition(self):
-        # 'Addition' is the same as set intersection
+
         self.assertEqual(self.relset_ABa + self.relset_Bab, qr.RelationSet([self.BBB, self.aaa]))
 
     def test_contains_1(self):
@@ -94,8 +94,8 @@ class TestRelationSet(unittest.TestCase):
     def test_len(self):
         self.assertEqual(len(self.relset_ABa), 3)
 
-    #    def test_mul(self):
-    #        '''N/A: The relations have to be part of an algebra to test multiplication'''
+
+
 
     def test_ne_1(self):
         self.assertEqual(self.relset_ABa != qr.RelationSet([self.aaa, self.BBB, self.AAA]), False)
@@ -103,21 +103,21 @@ class TestRelationSet(unittest.TestCase):
     def test_ne_2(self):
         self.assertEqual(self.relset_ABa != qr.RelationSet([self.bbb, self.BBB, self.AAA]), True)
 
-    # def test_repr(self):
-    #     self.assertEqual(self.relsetABC.__repr__(), '<RelationSet([a, b, c])>')
+
+
 
     def test_union(self):
         self.assertEqual(self.relset_ABa.union(self.relset_Bab),
                          qr.RelationSet([self.AAA, self.BBB, self.aaa, self.bbb]))
 
-    # def test_printSorted(self):
-    #     self.fail()
+
+
 
     def test_elements(self):
         self.assertEqual(self.relset_ABa.elements, frozenset([self.AAA, self.BBB, self.aaa]))
 
-    # def test_algebra(self):
-    #     self.fail()
+
+
 
     def test_converse(self):
         self.assertEqual(self.relset_ABa.converse, qr.RelationSet([self.aaa, self.bbb, self.AAA]))
@@ -142,44 +142,44 @@ class TestAlgebra(unittest.TestCase):
         self.alg3 = qr.Algebra(os.path.join(path, 'RightBranchingIntervalAlgebra.json'))
         self.alg4 = qr.Algebra(os.path.join(path, 'RCC8Algebra.json'))
 
-    # Interval Algebra
+
     def test_identity_relset0(self):
         allrelsnames0 = map(lambda x: x.short_name, self.alg0.identity)
         self.assertEqual(set(allrelsnames0),
                          {'B', 'E', 'D', 'OI', 'F', 'MI', 'DI', 'M', 'BI', 'O', 'S', 'FI', 'SI'})
 
-    # Interval and Point Algebra
+
     def test_identity_relset1(self):
         allrelsnames1 = map(lambda x: x.short_name, self.alg1.identity)
         self.assertEqual(set(allrelsnames1),
                          {'B', 'E', 'D', 'OI', 'F', 'MI', 'DI', 'M', 'BI', 'O', 'S', 'FI', 'SI', 'PE', 'PF', 'PFI',
                           'PS', 'PSI'})
 
-    # Left-Branching Interval and Point Algebra
+
     def test_identity_relset2(self):
         allrelsnames2 = map(lambda x: x.short_name, self.alg2.identity)
         self.assertEqual(set(allrelsnames2),
                          {'B', 'E', 'D', 'OI', 'F', 'MI', 'DI', 'M', 'BI', 'O', 'S', 'FI', 'SI', 'PE', 'PF', 'PFI',
                           'PS', 'PSI', 'LB', 'LBI', 'LF', 'LO', 'LOI', 'L~'})
 
-    # Right-Branching Interval and Point Algebra
+
     def test_identity_relset3(self):
         allrelsnames3 = map(lambda x: x.short_name, self.alg3.identity)
         self.assertEqual(set(allrelsnames3),
                          {'B', 'E', 'D', 'OI', 'F', 'MI', 'DI', 'M', 'BI', 'O', 'S', 'FI', 'SI', 'PE', 'PF', 'PFI',
                           'PS', 'PSI', 'RB', 'RBI', 'RO', 'ROI', 'RS', 'R~'})
 
-    # Region Connection Calculus 8
+
     def test_identity_relset4(self):
         allrelsnames4 = map(lambda x: x.short_name, self.alg4.identity)
         self.assertEqual(set(allrelsnames4),
                          {'DC', 'EC', 'EQ', 'NTPP', 'NTPPI', 'PO', 'TPP', 'TPPI'})
 
-    # def test_mult(self):
-    #     self.fail()
 
-    # def test_add(self):
-    #     self.fail()
+
+
+
+
 
     def test_name(self):
         self.assertEqual(self.alg0.name, 'LinearTimeAlgebra')
@@ -254,24 +254,24 @@ class TestAlgebra(unittest.TestCase):
     def test_is_associative0(self):
         self.assertEqual(self.alg0.is_associative(), True)
 
-    # def test_is_associative1(self):
-    #     self.assertEqual(self.alg1.is_associative(verbose=True), True)
 
-    # def test_is_associative2(self):
-    #     self.assertEqual(self.alg2.is_associative(), False)
-    #
-    # def test_is_associative3(self):
-    #     self.assertEqual(self.alg3.is_associative(), False)
-    #
-    # def test_is_associative4(self):
-    #     self.assertEqual(self.alg4.is_associative(), True)
+
+
+
+
+
+
+
+
+
+
 
 
 class TestNetwork(unittest.TestCase):
 
-    # def __init__(self, methodName='runTest'):
-    #     super().__init__(methodName='runTest')
-    #     self.D = None
+
+
+
 
     def setUp(self):
         """
@@ -308,7 +308,7 @@ class TestNetwork(unittest.TestCase):
         print(self.net0.print_constraints())
 
     def test_constraint_1(self):
-        # This is the "inconsistent labeling" network from Figure 5 of Allen's original 1983 paper
+
         rel_D  = self.alg0.relations["D"]
         rel_DI = self.alg0.relations["DI"]
         rel_F  = self.alg0.relations["F"]
@@ -323,16 +323,16 @@ class TestNetwork(unittest.TestCase):
         self.net1.constraint(self.int_B, self.int_C, [rel_D, rel_DI])
 
         self.net1.constraint(self.int_A, self.int_C, [rel_F, rel_FI])
-        # self.net1.constraint(self.int_A, self.int_C, [rel_F])
-        # self.net1.constraint(self.int_A, self.int_C, [rel_FI])
+
+
 
         print(self.net1.print_constraints())
         self.net1.propagate()
         print(self.net1.print_constraints())
 
-    # def test_propagate(self):
-    #     self.net0.propagate()
-    #     print(self.net0.print_constraints())
+
+
+
 
 
 if __name__ == '__main__':

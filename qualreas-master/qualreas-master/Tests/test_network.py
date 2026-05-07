@@ -40,8 +40,8 @@ class TestNetwork(unittest.TestCase):
         self.net0.propagate()
         print(self.net0.print_constraints())
 
-#    def test_printConstraints(self):
-#        self.fail()
+
+
 
 if __name__ == '__main__':
     unittest.main()

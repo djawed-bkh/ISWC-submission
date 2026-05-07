@@ -12,7 +12,7 @@ if __name__ == '__main__':
     path = os.path.join( os.getenv('PYPROJ'), 'qualreas' )
     rcc8_alg = Algebra(os.path.join(path, "RCC8Algebra.json"))
     rcc8 = rcc8_alg.relations
-    #rcc8.check_composition_identity()
+
 
     house1 = Region()
     house2 = Region()
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     tpp = rcc8["TPP"]
     ntpp = rcc8["NTPP"]
 
-    # EXAMPLE: Region Connection Calculus 8
+
     problem = Network(rcc8, entities = [house1, house2, property1, property2, road])
     problem.constraint(house1, house2, [dc])
     problem.constraint(house1, property1, [tpp, ntpp])
