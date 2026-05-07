@@ -1,0 +1,62 @@
+# Reduction statistics - Knowledge Graph: Q215380
+# Mode: Learner2 (threshold-free)
+#======================================================================
+
+## AVAILABLE STATISTICS (ORACLE PHASE)
+Domains (pairs)                 :     4556
+Total relations                 :    42549
+Observed rel. & support > 0    :     4540
+  -> proportion                : 4540 / 42549 (10.67%)
+Rel. status=None & sup=None    :    16679
+  -> proportion                : 16679 / 42549 (39.20%)
+Rel. status=None & sup == 0    :    21330
+  -> proportion                : 21330 / 42549 (50.13%)
+Inferred relations             :        0
+Observed and inferred relations:        0
+% domains without observed relation: 2566 / 4556 (56.32%)
+% domains with >=1 observed rel. & sup>0: 1990 / 4556 (43.68%)
+Support>0 per domain (avg/min/max/std) : 1.00/0/13/1.68
+Oracle calls                    :     2278
+Total oracle phase cost (s)     : 111.6214
+Oracle time min/max/avg (s)     : 0.040426 / 1.415545 / 0.048549
+
+## TEMPS CPU - PHASE ORACLE
+Appels oracle              : 2278
+Coût total phase oracle    : 111.6214 s
+Temps oracle / appel - moy : 0.048549 s  min=0.040426 s  max=1.415545 s
+
+## FILTRAGE PROPRIETES (TOP-K)
+Fraction top-k (proprietes)   : 0.40
+Proprietes gardees            : 68
+Faits gardes                  : 131222
+
+## AFTER ORACLE
+Relations support > 0 (Observed) : 4540 / 42549 (10.67%)
+Relations support == 0           : 21330 / 42549 (50.13%)
+Domains with >=1 Observed status : 1990 / 4556 (43.68%)
+Domains with None support        : 2566 / 4556 (56.32%)
+
+## AFTER PROPAGATION
+Relations status Observed        : 4540 / 37826 (12.00%)
+Relations status Obs.+Inferred   : 0 / 37826 (0.00%)
+Relations status Inferred        : 33286 / 37826 (88.00%)
+
+## TRANSITIONS ORACLE -> PROPAGATION
+Relations None -> Inferred       : 16643 / 38009 (43.79%)
+Relations Observed -> Obs.+Inf. : 0 / 4540 (0.00%)
+Total relations in initial QCN  : 59228
+Total relations after propagation: 37826
+Domains without sup>0 -> positive: 2566 / 2566 (100.00%)
+
+## CPU TIME PER STAGE
+Initial stage (reference)       :   0.0000 s
+Stage after_oracle (s)          : 111.6214
+Stage after_propagation (s)     : 160.2587
+
+## CUMULATIVE CPU TIME PER STAGE
+Cumulative after initial (s)    :   0.0000 s
+Cumulative after after_oracle(s): 111.6214
+Cumulative after after_propagation(s): 271.8801
+
+## GLOBAL CPU TIME
+Total learner2 (s)              : 273.3701
