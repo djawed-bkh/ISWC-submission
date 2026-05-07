@@ -1,0 +1,27 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff check
+        entry: uv run --no-sync ruff check .
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: ruff-format-check
+        name: Ruff format check
+        entry: uv run --no-sync ruff format --check .
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: pyright
+        name: Pyright
+        entry: uv run --no-sync pyright
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: pytest
+        name: Pytest
+        entry: uv run --no-sync pytest
+        language: system
+        pass_filenames: false
+        always_run: true

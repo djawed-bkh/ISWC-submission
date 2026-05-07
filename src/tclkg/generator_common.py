@@ -1,0 +1,411 @@
+from __future__ import annotations
+
+from collections.abc import Mapping
+from collections import deque
+from copy import copy, deepcopy
+import os
+from pathlib import Path
+
+import numpy as np
+
+from . import time_package as tp
+from .allen_list import ALLEN_COMPOSE, ALLEN_CONVERSE, ALLEN_RELATIONS
+from .rule_discovery import processing_date_unknown_allowed, to_common_uri
+
+TEMPORAL_GRANULARITY = "D"
+TODAY = np.datetime64("2023-12-31", TEMPORAL_GRANULARITY)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+RESULTS_ROOT = PROJECT_ROOT / "Results"
+
+
+def _resolve_data_root() -> Path:
+    configured_data_dir = os.environ.get("TCLKG_DATA_DIR")
+    if not configured_data_dir:
+        return PROJECT_ROOT / "data"
+
+    configured_path = Path(configured_data_dir).expanduser()
+    if configured_path.is_absolute():
+        return configured_path
+    return PROJECT_ROOT / configured_path
+
+
+ROOT_DATA = _resolve_data_root()
+
+SUPPORT_KEY = "support"
+STATUS_KEY = "status"
+RELATIONS_KEY = "relations"
+
+
+def _extract_relation_payloads(dom: Mapping[str, object]) -> dict[str, Mapping[str, object]]:
+    """Extract per-relation payloads from a structured scored domain."""
+    relations_obj = dom.get(RELATIONS_KEY)
+    if not isinstance(relations_obj, Mapping):
+        raise ValueError(
+            "Invalid scored domain format: expected a 'relations' mapping for each constraint domain."
+        )
+    payloads: dict[str, Mapping[str, object]] = {}
+    for relation, payload in relations_obj.items():
+        if relation not in ALLEN_RELATIONS:
+            continue
+        if not isinstance(payload, Mapping):
+            raise ValueError(
+                f"Invalid scored domain format: relation '{relation}' must map to a payload."
+            )
+        if SUPPORT_KEY not in payload or STATUS_KEY not in payload:
+            raise ValueError(
+                f"Invalid scored domain format: relation '{relation}' must contain '{SUPPORT_KEY}' and '{STATUS_KEY}'."
+            )
+        support = payload.get(SUPPORT_KEY)
+        status = payload.get(STATUS_KEY)
+        if support is not None and not isinstance(support, (int, float)):
+            raise ValueError(
+                f"Invalid scored domain format: relation '{relation}' has a non numeric support."
+            )
+        if status is not None and not isinstance(status, str):
+            raise ValueError(
+                f"Invalid scored domain format: relation '{relation}' has a non string status."
+            )
+        payloads[relation] = payload
+    return payloads
+
+
+def _extract_relation_scores(dom: Mapping[str, object]) -> dict[str, float]:
+    """Extract numeric Allen-relation supports from structured scored domains."""
+    scores: dict[str, float] = {}
+    for relation, payload in _extract_relation_payloads(dom).items():
+        support = payload.get(SUPPORT_KEY)
+        if isinstance(support, (int, float)):
+            scores[relation] = float(support)
+    return scores
+
+
+def _extract_relation_statuses(dom: Mapping[str, object]) -> dict[str, str | None]:
+    """Extract per-relation statuses from structured scored domains."""
+    statuses: dict[str, str | None] = {}
+    for relation, payload in _extract_relation_payloads(dom).items():
+        status = payload.get(STATUS_KEY)
+        statuses[relation] = status if isinstance(status, str) else None
+    return statuses
+
+
+def _build_structured_domain(
+    relations: Mapping[str, float | None],
+    relation_statuses: Mapping[str, str | None] | None = None,
+) -> dict[str, object]:
+    """Build a scored domain with support/status stored per relation."""
+    statuses = relation_statuses or {}
+    return {
+        RELATIONS_KEY: {
+            relation: {
+                SUPPORT_KEY: support,
+                STATUS_KEY: statuses.get(relation),
+            }
+            for relation, support in relations.items()
+        }
+    }
+
+
+def read_kg(
+    kg_type: str, print_properties_count: bool = True
+) -> tuple[dict[str, tp.Entity], set[str]]:
+    """Load a KG split into Entity objects and return seen relations/properties."""
+    entities: dict[str, tp.Entity] = {}
+    properties_seen: set[str] = set()
+
+    print("DÉBUT DU CHARGEMENT DU KNOWLEDGE GRAPH")
+    # Chercher data.quintuplet en priorité (dataset complet), fallback sur train_cst_knowledge
+    kg_path = ROOT_DATA / kg_type / "data.quintuplet"
+    if not kg_path.exists():
+        kg_path = ROOT_DATA / kg_type / "train_cst_knowledge.quintuplet"
+    with kg_path.open("r", encoding="UTF-8") as f_read:
+        for line in f_read:
+            head, relation, value, start, end = line.rstrip("\n").split("\t")
+            relation = to_common_uri(relation)
+            if head not in entities:
+                entities[head] = tp.Entity(head, TODAY, TEMPORAL_GRANULARITY)
+            entities[head].add_triple(
+                tp.Triple(
+                    head,
+                    relation,
+                    value,
+                    tp.Interval(
+                        processing_date_unknown_allowed(start),
+                        processing_date_unknown_allowed(end),
+                    ),
+                )
+            )
+            properties_seen.add(relation)
+
+    print("FIN DU CHARGEMENT DU KNOWLEDGE GRAPH")
+    print("Nombre d'entités chargées :", len(entities))
+    if print_properties_count:
+        print("Nombre de propriétés chargées :", len(properties_seen))
+    return entities, properties_seen
+
+
+def BasicRepairInconsistency(qcn: dict, key1: tuple[str, str], key2: tuple[str, str], composition: dict[str, float] | None = None) -> dict:
+    """
+    En cas d'inconsistance (domaine vide), on applique une réparation minimale en réintroduisant les relations d'Allen.
+    Cette fonction est à appeler après un échec de path consistency pour tenter de réparer le réseau de contraintes et poursuivre l'apprentissage.
+
+    :param qcn: QCN modifié après échec de path consistency (contenant un domaine vide)
+    :param key1: Clé de la paire (p1, p2) dans le QCN
+    :param key2: Clé de la paire inverse (p2, p1) dans le QCN
+    :param composition: Domaine composé à réintroduire (si None, utilise ALLEN_RELATIONS complet)
+    :return: QCN réparé avec les domaines réintroduits pour les paires inconsistantes
+    """
+    repaired_qcn = deepcopy(qcn)
+
+    _extract_relation_payloads(qcn[key1])
+    _extract_relation_payloads(qcn[key2])
+
+    # Déterminer quelles relations réintroduire
+    if composition is not None and composition:
+        # Utiliser les relations de la composition mais avec un score de -1 pour toutes
+        # pour marquer qu'elles sont issues d'une réparation
+        relation_scores = {r: -1.0 for r in composition.keys()}
+    else:
+        # Domaine complet d'Allen avec scores de -1
+        relation_scores = {r: -1.0 for r in ALLEN_RELATIONS}
+
+    relation_statuses = {relation: "Repaired" for relation in relation_scores}
+    what_to_add = _build_structured_domain(relation_scores, relation_statuses)
+    converse_what_to_add = converse_domain_scores(what_to_add)
+    
+    # Réintroduire les relations avec score de -1 pour la paire directe
+    repaired_qcn[key1] = what_to_add
+    repaired_qcn[key2] = converse_what_to_add
+        
+        
+    return repaired_qcn
+
+
+
+def converse_domain_set(dom: set[str]) -> set[str]:
+    """Return converse Allen relations for a set-based domain."""
+    return {ALLEN_CONVERSE[r] for r in dom}
+
+
+def converse_domain_scores(dom: Mapping[str, object]) -> dict[str, object]:
+    """Return converse Allen relations for a structured scored domain."""
+    relations = _extract_relation_scores(dom)
+    statuses = _extract_relation_statuses(dom)
+    converse_relations = {ALLEN_CONVERSE[r]: score for r, score in relations.items()}
+    converse_statuses = {ALLEN_CONVERSE[r]: status for r, status in statuses.items()}
+    return _build_structured_domain(converse_relations, converse_statuses)
+
+
+def build_complete_network(
+    properties: set[str] | list[str],
+    default_constraints: set[str] | frozenset[str] = ALLEN_RELATIONS,
+) -> dict[tuple[str, str], set[str]]:
+    """Build a full pairwise Allen network with set domains."""
+    network: dict[tuple[str, str], set[str]] = {}
+    for property1 in properties:
+        for property2 in properties:
+            if property1 != property2:
+                network[(property1, property2)] = set(default_constraints)
+    return network
+
+
+def build_scored_network(
+    properties: set[str] | list[str],
+    default_constraints: set[str] | frozenset[str] = ALLEN_RELATIONS,
+) -> dict[tuple[str, str], dict[str, float]]:
+    """Build a full pairwise Allen network with scored domains."""
+    network: dict[tuple[str, str], dict[str, float]] = {}
+    for property1 in properties:
+        for property2 in properties:
+            if property1 != property2:
+                network[(property1, property2)] = {
+                    relation: 0.0 for relation in default_constraints
+                }
+    return network
+
+
+def build_scored_networkwithThreshold(
+    properties: set[str] | list[str],
+    default_constraints: set[str] | frozenset[str] = ALLEN_RELATIONS,
+    top_k_fraction: float = 0.3,
+    entities: dict[str, tp.Entity] | None = None,
+) -> dict[tuple[str, str], dict[str, object]]:
+    """Build a scored network and optionally filter properties by quadruplet (fact) support.
+
+    If entities is provided, only the top `top_k_fraction` properties (by quadruplet count)
+    are kept for QCN construction. Default keeps top 30%.
+    """
+    if top_k_fraction < 0 or top_k_fraction > 1:
+        raise ValueError(f"top_k_fraction must be in [0, 1], got {top_k_fraction}")
+
+    filtered_properties = sorted(properties)
+    if entities is not None:
+        # Count quadruplets per property
+        property_quadruplet_count: dict[str, int] = {p: 0 for p in filtered_properties}
+
+        for entity in entities.values():
+            for prop, triples in entity.triples_per_p.items():
+                if prop in property_quadruplet_count:
+                    property_quadruplet_count[prop] += len(triples)
+
+        # Sort by quadruplet count (descending), then by property name for stable tie-breaks.
+        sorted_props = sorted(
+            property_quadruplet_count.items(),
+            key=lambda x: (-x[1], x[0]),
+        )
+        if top_k_fraction == 0:
+            k = 0
+        else:
+            k = max(1, int(np.ceil(len(filtered_properties) * top_k_fraction)))
+        filtered_properties = [p for p, _ in sorted_props[:k]]
+
+    network: dict[tuple[str, str], dict[str, object]] = {}
+    for property1 in filtered_properties:
+        for property2 in filtered_properties:
+            if property1 != property2:
+                relation_scores: dict[str, float | None] = {
+                    relation: None for relation in default_constraints
+                }
+                relation_statuses = {relation: None for relation in default_constraints}
+                network[(property1, property2)] = _build_structured_domain(
+                    relation_scores,
+                    relation_statuses,
+                )
+    return network
+
+def compose_allen_set(r1_domain: set[str], r2_domain: set[str]) -> set[str]:
+    """Compose two set-based Allen domains."""
+    result: set[str] = set()
+    for r1 in r1_domain:
+        for r2 in r2_domain:
+            result |= ALLEN_COMPOSE[(r1, r2)]
+    return result
+
+
+def compose_allen_scores(
+    r1_domain: dict[str, float], r2_domain: dict[str, float]
+) -> dict[str, float]:
+    """Compose two scored Allen domains, keeping max support per relation.
+    Si on a un score < 0, cela signifie que la relation est issue d'une réparation
+    et qu'elle n'est pas forcément supportée par les données.
+    On choisis alors de ne pas propager le score de ces relations réparées pour
+    éviter de biaiser les scores des relations composées.
+    """
+    result: dict[str, float] = {}
+    for r1, score1 in r1_domain.items():
+        if r1 not in ALLEN_RELATIONS:
+            continue
+        if score1 < 0:  # si la relation n'est pas issue d'une réparation ou si elle n'a pas de support
+            continue  # ignorer les relations sans support
+        for r2, score2 in r2_domain.items():
+            if r2 not in ALLEN_RELATIONS:
+                continue
+            if score2 < 0:  # si la relation n'est pas issue d'une réparation ou si elle n'a pas de support
+                continue  # ignorer les relations sans support
+            composed_relations = ALLEN_COMPOSE[(r1, r2)]
+            min_score = min(score1, score2)
+            for relation in composed_relations:
+                if relation in result:
+                    result[relation] = max(result[relation], min_score)
+                else:
+                    result[relation] = min_score
+    return result
+
+
+def path_consistency_classique(qcn: dict) -> dict | None:
+    """
+    Applique la path consistency sur le qcn
+    Retourne le réseau de contraintes modifié si la propagation réussit,
+    ou False si un domaine vide est rencontré (échec de la propagation).
+    """
+    qcn_copy = deepcopy(qcn)
+    properties = sorted(
+        {p for (x, y) in qcn_copy.keys() for p in (x, y)}
+    )  # liste des propriétés impliquées dans le réseau de contraintes
+
+    def intersect_with_composed_domain(
+        domain: Mapping[str, object],
+        left_domain: Mapping[str, object],
+        right_domain: Mapping[str, object],
+    ) -> dict[str, float]:
+        left_relations = set(_extract_relation_scores(left_domain))
+        right_relations = set(_extract_relation_scores(right_domain))
+        domain_relations = set(_extract_relation_payloads(domain))
+        composed_relations = compose_allen_set(left_relations, right_relations)
+        return {
+            relation: 0.0
+            for relation in domain_relations
+            if relation in composed_relations
+        }
+
+    queue = deque(qcn_copy.keys())  # initialisation de la file avec toutes les paires
+
+    while queue:  # tant que la file n'est pas vide
+        i, j = queue.popleft()  # dépiler une paire (i,j)
+
+        for k in properties:
+            if k == i or k == j:
+                continue
+            if (i, k) not in qcn_copy or (k, j) not in qcn_copy:
+                print(
+                    "Warning: missing arc in qcn_copy during propagation:",
+                    (i, k),
+                    "or",
+                    (k, j),
+                    "this should not happen !",
+                )
+                raise ValueError(
+                    f"Missing arc in qcn_copy during propagation: {(i, k)} or {(k, j)}"
+                )
+            dik = qcn_copy[(i, k)]
+            new_dik = intersect_with_composed_domain(
+                dik,
+                qcn_copy[(i, j)],
+                qcn_copy[(j, k)],
+            )
+
+            dkj = qcn_copy[(k, j)]
+            new_dkj = intersect_with_composed_domain(
+                dkj,
+                qcn_copy[(k, i)],
+                qcn_copy[(i, j)],
+            )
+                    
+            if set(new_dik.keys()) != set(_extract_relation_scores(dik).keys()):
+                if not new_dik:  # domaine vide => échec de la propagation
+                    print(
+                            f"COLLAPSE: domain empty for pair ({i}, {k}) during path consistency ! ORIGIN: PATH CONSISTENCY"
+                        )
+                    return None
+                else:
+                    dik_statuses = {
+                        relation: _extract_relation_statuses(dik).get(relation)
+                        for relation in new_dik
+                    }
+                    qcn_copy[(i, k)] = _build_structured_domain(new_dik, dik_statuses)  # mise à jour du domaine modifié
+                    qcn_copy[(k, i)] = converse_domain_scores(
+                        qcn_copy[(i, k)]
+                    )  # mise à jour du domaine inverse
+
+                # re-enfiler minimalement
+                queue.append((i, k))
+            if set(new_dkj.keys()) != set(_extract_relation_scores(dkj).keys()):
+                if not new_dkj:  # domaine vide => échec de la propagation
+                
+                    print(
+                            f"COLLAPSE: domain empty for pair ({k}, {j}) during path consistency ! ORIGIN: PATH CONSISTENCY"
+                        )
+                    return None
+                else:
+                    dkj_statuses = {
+                        relation: _extract_relation_statuses(dkj).get(relation)
+                        for relation in new_dkj
+                    }
+                    qcn_copy[(k, j)] = _build_structured_domain(new_dkj, dkj_statuses)  # mise à jour du domaine modifié
+                    qcn_copy[(j, k)] = converse_domain_scores(
+                        qcn_copy[(k, j)]
+                    )  # mise à jour du domaine inverse
+
+                # re-enfiler minimalement
+                queue.append((k, j))
+
+    return qcn_copy

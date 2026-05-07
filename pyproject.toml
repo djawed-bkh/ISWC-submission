@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "temporal-constraint-learning-kgs"
+version = "0.1.0"
+description = "Temporal constraint learning with Allen relations on knowledge graphs"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "bitsets>=0.7.16",
+    "matplotlib>=3.10.8",
+    "networkx>=2.2",
+    "numpy>=2.4.2",
+]
+
+[project.scripts]
+tclkg-qcn-generator2 = "tclkg.qcn_generator2:main"
+tclkg-run-experiments = "tclkg.run_experiments:main"
+
+[dependency-groups]
+dev = [
+    "coverage>=7.13.4",
+    "pre-commit>=4.5.1",
+    "pyright>=1.1.408",
+    "pytest>=9.0.2",
+    "ruff>=0.15.1",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/tclkg"]
+
+[tool.coverage.report]
+fail_under = 45
+show_missing = true

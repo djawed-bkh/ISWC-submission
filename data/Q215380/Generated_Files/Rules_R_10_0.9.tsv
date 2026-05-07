@@ -1,0 +1,4 @@
+http://www.wikidata.org/prop/P2002	in_between	http://www.wikidata.org/prop/P2031	0.9771378708551484	5730
+http://www.wikidata.org/prop/P2031	before	http://www.wikidata.org/prop/P2002	0.9959860383944154	5730
+http://www.wikidata.org/prop/P2031	in_between	http://www.wikidata.org/prop/P2002	0.9771378708551484	5730
+http://www.wikidata.org/prop/P2031	sequence_before	http://www.wikidata.org/prop/P2002	0.9970331588132635	5730
