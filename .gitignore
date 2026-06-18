@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+*.egg-info/
+
+# IDEs
+.vscode/
+.idea/
+
+# Large data files
+0.Data/Q82955/
+0.Data/Data*.zip
+0.Data/Data_chunk*
+
+# Temporary files
+res.txt
+Trash.txt
+*.tmp
+*.log
+
+# Plots
+1.DataGeneration/Plots/
+*.csv
+*.pdf
+*.txt
+.coverage
+resume_last_session.sh
+
+# Fichiers de données volumineux
+data/Q82955/
+*.quintuplet
+
+Results/
+*.json
+*.png
